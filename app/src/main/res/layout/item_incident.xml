@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E2E8F0">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_incident_type"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="CRASH DETECTED"
+                android:textColor="#DC2626"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_incident_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#FEF2F2"
+                android:paddingStart="10dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="5dp"
+                android:text="AMBULANCE DISPATCHED"
+                android:textColor="#DC2626"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F1F5F9"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp" />
+
+        <TextView
+            android:id="@+id/tv_incident_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location: Lat 18.5204, Lng 73.8567"
+            android:textColor="#334155"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tv_incident_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Timestamp: 2026-03-01 10:30"
+            android:textColor="#64748B"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tv_incident_details"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Details: Impact spike 4.2g"
+            android:textColor="#475569"
+            android:textSize="13sp"
+            android:textStyle="italic" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

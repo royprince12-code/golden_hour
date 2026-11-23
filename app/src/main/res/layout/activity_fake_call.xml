@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F172A"
+    android:padding="32dp">
+
+    <!-- Caller Info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="60dp"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            app:tint="#94A3B8"
+            android:contentDescription="Avatar" />
+
+        <TextView
+            android:id="@+id/tv_caller_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Emergency Contact (Dad)"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_call_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Incoming Call..."
+            android:textColor="#38BDF8"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Call Control Buttons -->
+    <LinearLayout
+        android:id="@+id/layout_call_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="40dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <!-- Decline -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_decline_call"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="40dp"
+            android:contentDescription="Decline"
+            app:srcCompat="@android:drawable/ic_menu_close_clear_cancel"
+            app:backgroundTint="#EF4444"
+            app:tint="#FFFFFF"
+            app:fabCustomSize="68dp" />
+
+        <!-- Answer -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btn_answer_call"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:contentDescription="Answer"
+            app:srcCompat="@android:drawable/ic_menu_call"
+            app:backgroundTint="#22C55E"
+            app:tint="#FFFFFF"
+            app:fabCustomSize="68dp" />
+
+    </LinearLayout>
+
+    <!-- End Active Call Button (hidden until answered) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_end_call"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="40dp"
+        android:text="END CALL"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="#EF4444"
+        android:textColor="#FFFFFF"
+        android:visibility="gone" />
+
+</RelativeLayout>
