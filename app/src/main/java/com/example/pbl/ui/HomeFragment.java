@@ -180,9 +180,15 @@ public class HomeFragment extends Fragment {
     }
 
     private void enableRideMode() {
-        CrashDetectionService.startService(requireContext());
-        updateRideModeStatusUI(true);
-        Toast.makeText(requireContext(), "Ride Mode Activated: Real-time sensor monitoring active", Toast.LENGTH_SHORT).show();
+        try {
+            CrashDetectionService.startService(requireContext());
+            updateRideModeStatusUI(true);
+            Toast.makeText(requireContext(), "Ride Mode Activated: Real-time sensor monitoring active", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Failed to start Ride Mode service: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            binding.switchRideMode.setChecked(false);
+            updateRideModeStatusUI(false);
+        }
     }
 
     private void updateRideModeStatusUI(boolean isEnabled) {

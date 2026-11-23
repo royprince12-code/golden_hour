@@ -1,9 +1,15 @@
 package com.example.pbl.utils;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
 
 import com.example.pbl.db.DatabaseHelper;
 import com.example.pbl.model.EmergencyContact;
@@ -45,7 +51,8 @@ public class SosManager {
 
         String smsMessage = "EMERGENCY ALERT! " + userName + " has triggered a Danger SOS. Location: " + location + medicalInfo + ". Please send help immediately!";
 
-        sendSmsToEmergencyContacts(context, smsMessage);
+        // Send SMS asynchronously in background thread to prevent UI freeze / ANR
+        new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
 
         return incidentId;
     }
@@ -79,43 +86,62 @@ public class SosManager {
                 ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
                 ". Ambulance dispatched and hospital pre-alerted!";
 
-        sendSmsToEmergencyContacts(context, smsMessage);
+        // Send SMS asynchronously in background thread to prevent UI freeze / ANR
+        new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
 
         return incidentId;
     }
 
     private static void sendSmsToEmergencyContacts(Context context, String message) {
-        DatabaseHelper db = DatabaseHelper.getInstance(context);
-        List<EmergencyContact> contacts = db.getAllContacts();
+        try {
+            // Check if SEND_SMS permission is granted before trying to send SMS
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "SEND_SMS permission not granted. Skipping SMS dispatch to prevent SecurityException crash.");
+                new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(context, "Emergency Alert Logged! (Grant SMS permission in settings to send SMS)", Toast.LENGTH_LONG).show()
+                );
+                return;
+            }
 
-        if (contacts.isEmpty()) {
-            Toast.makeText(context, "Emergency Alert Logged! (No Emergency Contacts Configured)", Toast.LENGTH_LONG).show();
-            return;
-        }
+            DatabaseHelper db = DatabaseHelper.getInstance(context.getApplicationContext());
+            List<EmergencyContact> contacts = db.getAllContacts();
 
-        SmsManager smsManager;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            smsManager = context.getSystemService(SmsManager.class);
-        } else {
-            smsManager = SmsManager.getDefault();
-        }
+            if (contacts.isEmpty()) {
+                new Handler(Looper.getMainLooper()).post(() ->
+                    Toast.makeText(context, "Emergency Alert Logged! (No Emergency Contacts Configured)", Toast.LENGTH_LONG).show()
+                );
+                return;
+            }
 
-        StringBuilder alertedNames = new StringBuilder();
-        for (EmergencyContact contact : contacts) {
-            if (contact.getPhone() != null && !contact.getPhone().isEmpty()) {
-                try {
-                    if (smsManager != null) {
-                        smsManager.sendTextMessage(contact.getPhone(), null, message, null, null);
-                        if (alertedNames.length() > 0) alertedNames.append(", ");
-                        alertedNames.append(contact.getName());
-                        Log.i(TAG, "Real SMS dispatched to " + contact.getName() + " (" + contact.getPhone() + ")");
+            SmsManager smsManager;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                smsManager = context.getApplicationContext().getSystemService(SmsManager.class);
+            } else {
+                smsManager = SmsManager.getDefault();
+            }
+
+            StringBuilder alertedNames = new StringBuilder();
+            for (EmergencyContact contact : contacts) {
+                if (contact.getPhone() != null && !contact.getPhone().isEmpty()) {
+                    try {
+                        if (smsManager != null) {
+                            smsManager.sendTextMessage(contact.getPhone(), null, message, null, null);
+                            if (alertedNames.length() > 0) alertedNames.append(", ");
+                            alertedNames.append(contact.getName());
+                            Log.i(TAG, "Real SMS dispatched to " + contact.getName() + " (" + contact.getPhone() + ")");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to send SMS to " + contact.getPhone(), e);
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to send SMS to " + contact.getPhone(), e);
                 }
             }
-        }
 
-        Toast.makeText(context, "EMERGENCY SMS SENT to: " + (alertedNames.length() > 0 ? alertedNames.toString() : "Contacts"), Toast.LENGTH_LONG).show();
+            final String names = alertedNames.length() > 0 ? alertedNames.toString() : "Contacts";
+            new Handler(Looper.getMainLooper()).post(() ->
+                Toast.makeText(context, "EMERGENCY SMS SENT to: " + names, Toast.LENGTH_LONG).show()
+            );
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in sendSmsToEmergencyContacts", e);
+        }
     }
 }

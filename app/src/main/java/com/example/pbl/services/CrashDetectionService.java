@@ -20,6 +20,8 @@ import androidx.core.app.NotificationCompat;
 
 import com.example.pbl.MainActivity;
 import com.example.pbl.R;
+import com.example.pbl.db.DatabaseHelper;
+import com.example.pbl.model.UserProfile;
 import com.example.pbl.ui.CrashCountdownActivity;
 
 public class CrashDetectionService extends Service implements SensorEventListener {
@@ -42,38 +44,53 @@ public class CrashDetectionService extends Service implements SensorEventListene
     }
 
     public static void startService(Context context) {
-        Intent intent = new Intent(context, CrashDetectionService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
-        } else {
-            context.startService(intent);
+        try {
+            Intent intent = new Intent(context, CrashDetectionService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start CrashDetectionService", e);
         }
     }
 
     public static void stopService(Context context) {
-        Intent intent = new Intent(context, CrashDetectionService.class);
-        context.stopService(intent);
+        try {
+            Intent intent = new Intent(context, CrashDetectionService.class);
+            context.stopService(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to stop CrashDetectionService", e);
+        }
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager != null) {
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        try {
+            sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+            if (sensorManager != null) {
+                accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            }
+            createNotificationChannel();
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onCreate", e);
         }
-
-        createNotificationChannel();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        isServiceRunning = true;
-        Notification notification = createNotification();
-        startForeground(NOTIFICATION_ID, notification);
+        try {
+            isServiceRunning = true;
+            Notification notification = createNotification();
+            startForeground(NOTIFICATION_ID, notification);
 
-        if (accelerometer != null && sensorManager != null) {
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+            if (accelerometer != null && sensorManager != null) {
+                sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onStartCommand", e);
         }
 
         return START_STICKY;
@@ -83,8 +100,12 @@ public class CrashDetectionService extends Service implements SensorEventListene
     public void onDestroy() {
         super.onDestroy();
         isServiceRunning = false;
-        if (sensorManager != null) {
-            sensorManager.unregisterListener(this);
+        try {
+            if (sensorManager != null) {
+                sensorManager.unregisterListener(this);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onDestroy", e);
         }
     }
 
@@ -96,23 +117,27 @@ public class CrashDetectionService extends Service implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
+        try {
+            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                float x = event.values[0];
+                float y = event.values[1];
+                float z = event.values[2];
 
-            float acceleration = (float) Math.sqrt(x * x + y * y + z * z);
+                float acceleration = (float) Math.sqrt(x * x + y * y + z * z);
 
-            // Check if acceleration spike exceeds 4g (39.2 m/s^2)
-            if (acceleration >= CRASH_THRESHOLD_MS2) {
-                long currentTime = System.currentTimeMillis();
-                // Prevent multiple triggers within 10 seconds
-                if (currentTime - lastTriggerTime > 10000) {
-                    lastTriggerTime = currentTime;
-                    Log.w(TAG, "IMPACT SPIKE DETECTED: " + acceleration + " m/s^2 (" + (acceleration / SensorManager.GRAVITY_EARTH) + "g)");
-                    triggerCrashCountdown();
+                // Check if acceleration spike exceeds 4g (39.2 m/s^2)
+                if (acceleration >= CRASH_THRESHOLD_MS2) {
+                    long currentTime = System.currentTimeMillis();
+                    // Prevent multiple triggers within 10 seconds
+                    if (currentTime - lastTriggerTime > 10000) {
+                        lastTriggerTime = currentTime;
+                        Log.w(TAG, "IMPACT SPIKE DETECTED: " + acceleration + " m/s^2 (" + (acceleration / SensorManager.GRAVITY_EARTH) + "g)");
+                        triggerCrashCountdown();
+                    }
                 }
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onSensorChanged", e);
         }
     }
 
@@ -121,9 +146,13 @@ public class CrashDetectionService extends Service implements SensorEventListene
     }
 
     private void triggerCrashCountdown() {
-        Intent intent = new Intent(this, CrashCountdownActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
+        try {
+            Intent intent = new Intent(this, CrashCountdownActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Error launching CrashCountdownActivity", e);
+        }
     }
 
     private void createNotificationChannel() {
@@ -148,10 +177,15 @@ public class CrashDetectionService extends Service implements SensorEventListene
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
 
-        com.example.pbl.model.UserProfile profile = com.example.pbl.db.DatabaseHelper.getInstance(this).getUserProfile();
-        String medicalSummary = (profile != null && profile.getBloodGroup() != null)
-                ? "Blood Group: " + profile.getBloodGroup() + " | Medical ID active"
-                : "Ride Mode: Real-time crash detection active";
+        String medicalSummary = "Ride Mode: Real-time crash detection active";
+        try {
+            UserProfile profile = DatabaseHelper.getInstance(this).getUserProfile();
+            if (profile != null && profile.getBloodGroup() != null && !profile.getBloodGroup().isEmpty()) {
+                medicalSummary = "Blood Group: " + profile.getBloodGroup() + " | Medical ID active";
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error reading user profile for notification", e);
+        }
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("GoldenHour Protection (Lock Screen Medical ID)")

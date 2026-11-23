@@ -1,10 +1,9 @@
 package com.example.pbl.ui;
 
-import android.content.Context;
-import android.media.AudioManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,8 +22,6 @@ public class FakeCallActivity extends AppCompatActivity {
     private Runnable timerRunnable;
     private int secondsActive = 0;
     private Ringtone ringtone;
-    private AudioManager audioManager;
-    private int previousRingerMode = -100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,18 +29,10 @@ public class FakeCallActivity extends AppCompatActivity {
         binding = ActivityFakeCallBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Silence other calls and incoming ringers during fake call simulation
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        if (audioManager != null) {
-            previousRingerMode = audioManager.getRingerMode();
-            audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-        }
-
         startRingtone();
 
         binding.btnDeclineCall.setOnClickListener(v -> {
             stopRingtone();
-            restoreAudioSettings();
             finish();
         });
 
@@ -55,8 +44,14 @@ public class FakeCallActivity extends AppCompatActivity {
     private void startRingtone() {
         try {
             Uri ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            if (ringtoneUri == null) {
+                ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            }
             ringtone = RingtoneManager.getRingtone(getApplicationContext(), ringtoneUri);
             if (ringtone != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    ringtone.setLooping(true);
+                }
                 ringtone.play();
             }
         } catch (Exception e) {
@@ -65,14 +60,12 @@ public class FakeCallActivity extends AppCompatActivity {
     }
 
     private void stopRingtone() {
-        if (ringtone != null && ringtone.isPlaying()) {
-            ringtone.stop();
-        }
-    }
-
-    private void restoreAudioSettings() {
-        if (audioManager != null && previousRingerMode != -100) {
-            audioManager.setRingerMode(previousRingerMode);
+        try {
+            if (ringtone != null && ringtone.isPlaying()) {
+                ringtone.stop();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -99,7 +92,6 @@ public class FakeCallActivity extends AppCompatActivity {
 
     private void endCall() {
         stopRingtone();
-        restoreAudioSettings();
         if (timerHandler != null && timerRunnable != null) {
             timerHandler.removeCallbacks(timerRunnable);
         }
@@ -110,7 +102,6 @@ public class FakeCallActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         stopRingtone();
-        restoreAudioSettings();
         endCall();
     }
 }
