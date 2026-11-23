@@ -4,83 +4,91 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#F8F9FA">
+    android:background="#F8FAFC">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <!-- Header Banner -->
+        <!-- Header Banner Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="#1E293B"
-            android:layout_marginBottom="16dp">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="#0F172A"
+            android:layout_marginBottom="20dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="22dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="GoldenHour Emergency Shield"
+                    android:text="GoldenHour Shield"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp"
+                    android:textSize="22sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Faster response in road crashes &amp; personal emergencies"
+                    android:layout_marginTop="6dp"
+                    android:text="Active crash monitoring &amp; emergency response system"
                     android:textColor="#94A3B8"
                     android:textSize="13sp" />
 
                 <!-- Ride Mode Switch Card -->
-                <LinearLayout
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:background="#334155"
-                    android:padding="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="#1E293B">
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:padding="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Ride Mode (Crash Detection)"
-                            android:textColor="#FFFFFF"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tv_ride_mode_status"
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ride Mode (Crash Sensing)"
+                                android:textColor="#FFFFFF"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tv_ride_mode_status"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Sensor monitoring: Disabled"
+                                android:textColor="#E2E8F0"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_ride_mode"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sensor monitoring: Disabled"
-                            android:textColor="#E2E8F0"
-                            android:textSize="12sp" />
+                            android:layout_height="wrap_content" />
                     </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switch_ride_mode"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-                </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -93,29 +101,34 @@
             app:cardCornerRadius="24dp"
             app:cardElevation="6dp"
             app:cardBackgroundColor="#DC2626"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="20dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="26dp">
 
                 <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
                     android:src="@android:drawable/ic_dialog_alert"
-                    app:tint="#FFFFFF" />
+                    app:tint="#FFFFFF"
+                    android:contentDescription="SOS Alert Icon" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:text="DANGER SOS"
                     android:textColor="#FFFFFF"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -123,7 +136,8 @@
                     android:layout_marginTop="4dp"
                     android:text="Tap to instantly alert Police &amp; Emergency Contacts"
                     android:textColor="#FEE2E2"
-                    android:textSize="13sp" />
+                    android:textSize="13sp"
+                    android:gravity="center" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -132,19 +146,23 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Safety Tools &amp; Prevention"
-            android:textColor="#1E293B"
+            android:textColor="#0F172A"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="10dp" />
 
         <!-- Fake Call Card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_fake_call"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            android:layout_marginBottom="12dp">
+            app:cardBackgroundColor="#FFFFFF"
+            android:layout_marginBottom="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -180,7 +198,8 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@android:drawable/ic_menu_call"
-                    app:tint="#10B981" />
+                    app:tint="#10B981"
+                    android:contentDescription="Fake Call Icon" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -189,9 +208,13 @@
             android:id="@+id/card_bystander_report"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
+            app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            android:layout_marginBottom="16dp">
+            app:cardBackgroundColor="#FFFFFF"
+            android:layout_marginBottom="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -218,8 +241,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Witnessed a crash? Dispatch ambulance instantly."
-                        android:textColor="#64748B"
                         android:textSize="12sp"
+                        android:textColor="#64748B"
                         android:layout_marginTop="2dp" />
                 </LinearLayout>
 
@@ -227,7 +250,8 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@android:drawable/ic_menu_camera"
-                    app:tint="#2563EB" />
+                    app:tint="#2563EB"
+                    android:contentDescription="Bystander Icon" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

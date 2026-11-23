@@ -1,6 +1,7 @@
 package com.example.pbl.utils;
 
 import android.content.Context;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,7 +19,6 @@ public class SosManager {
     public static long triggerDangerSos(Context context, String customDetails) {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
-        // Get user location simulation
         String location = "Lat: 18.5204, Lng: 73.8567 (Pune Central)";
         String details = (customDetails != null && !customDetails.isEmpty())
                 ? customDetails
@@ -35,24 +35,17 @@ public class SosManager {
 
         long incidentId = db.addIncident(incident);
 
-        // Simulate sending SMS & Push notifications to emergency contacts
-        List<EmergencyContact> contacts = db.getAllContacts();
         UserProfile profile = db.getUserProfile();
         String userName = (profile != null && profile.getName() != null && !profile.getName().isEmpty())
                 ? profile.getName()
                 : "GoldenHour User";
+        String medicalInfo = (profile != null && profile.getBloodGroup() != null)
+                ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
+                : "";
 
-        if (contacts.isEmpty()) {
-            Toast.makeText(context, "SOS Alert Generated! (No Emergency Contacts Configured)", Toast.LENGTH_LONG).show();
-        } else {
-            StringBuilder contactNames = new StringBuilder();
-            for (EmergencyContact contact : contacts) {
-                if (contactNames.length() > 0) contactNames.append(", ");
-                contactNames.append(contact.getName());
-                Log.i(TAG, "Simulated SMS to " + contact.getName() + " (" + contact.getPhone() + "): EMERGENCY! " + userName + " triggered Danger SOS at " + location);
-            }
-            Toast.makeText(context, "DANGER SOS SENT! Alerted: " + contactNames.toString(), Toast.LENGTH_LONG).show();
-        }
+        String smsMessage = "EMERGENCY ALERT! " + userName + " has triggered a Danger SOS. Location: " + location + medicalInfo + ". Please send help immediately!";
+
+        sendSmsToEmergencyContacts(context, smsMessage);
 
         return incidentId;
     }
@@ -74,15 +67,55 @@ public class SosManager {
 
         long incidentId = db.addIncident(incident);
 
-        // Dispatch ambulance & hospital pre-alert simulation
-        List<EmergencyContact> contacts = db.getAllContacts();
         UserProfile profile = db.getUserProfile();
-
+        String userName = (profile != null && profile.getName() != null && !profile.getName().isEmpty())
+                ? profile.getName()
+                : "GoldenHour User";
         String bloodGroup = (profile != null && profile.getBloodGroup() != null) ? profile.getBloodGroup() : "Unknown";
-        Log.i(TAG, "CRASH PRE-ALERT SENT TO NEAREST HOSPITAL & AMBULANCE. Medical ID Blood Group: " + bloodGroup);
+        String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
+        String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
 
-        Toast.makeText(context, "CRASH ALERT SENT! Ambulance Dispatched & Pre-Alert sent to Hospital.", Toast.LENGTH_LONG).show();
+        String smsMessage = "CRASH DETECTED! " + userName + " was involved in a severe road accident. Location: " + location +
+                ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
+                ". Ambulance dispatched and hospital pre-alerted!";
+
+        sendSmsToEmergencyContacts(context, smsMessage);
 
         return incidentId;
+    }
+
+    private static void sendSmsToEmergencyContacts(Context context, String message) {
+        DatabaseHelper db = DatabaseHelper.getInstance(context);
+        List<EmergencyContact> contacts = db.getAllContacts();
+
+        if (contacts.isEmpty()) {
+            Toast.makeText(context, "Emergency Alert Logged! (No Emergency Contacts Configured)", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        SmsManager smsManager;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            smsManager = context.getSystemService(SmsManager.class);
+        } else {
+            smsManager = SmsManager.getDefault();
+        }
+
+        StringBuilder alertedNames = new StringBuilder();
+        for (EmergencyContact contact : contacts) {
+            if (contact.getPhone() != null && !contact.getPhone().isEmpty()) {
+                try {
+                    if (smsManager != null) {
+                        smsManager.sendTextMessage(contact.getPhone(), null, message, null, null);
+                        if (alertedNames.length() > 0) alertedNames.append(", ");
+                        alertedNames.append(contact.getName());
+                        Log.i(TAG, "Real SMS dispatched to " + contact.getName() + " (" + contact.getPhone() + ")");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to send SMS to " + contact.getPhone(), e);
+                }
+            }
+        }
+
+        Toast.makeText(context, "EMERGENCY SMS SENT to: " + (alertedNames.length() > 0 ? alertedNames.toString() : "Contacts"), Toast.LENGTH_LONG).show();
     }
 }

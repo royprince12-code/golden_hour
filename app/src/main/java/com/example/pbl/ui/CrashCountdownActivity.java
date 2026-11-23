@@ -18,6 +18,7 @@ public class CrashCountdownActivity extends AppCompatActivity {
     private ActivityCrashCountdownBinding binding;
     private CountDownTimer countDownTimer;
     private Vibrator vibrator;
+    private boolean isOkTapped = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,9 +53,9 @@ public class CrashCountdownActivity extends AppCompatActivity {
         startCountdown();
 
         binding.btnCancelCountdown.setOnClickListener(v -> {
-            cancelCountdown();
-            Toast.makeText(this, "False Alarm Cancelled. You are marked Safe.", Toast.LENGTH_LONG).show();
-            finish();
+            isOkTapped = true;
+            binding.btnCancelCountdown.setText("STEP 2: PRESS VOLUME UP (+)");
+            Toast.makeText(this, "Step 1: 'I Am OK' registered. Now press Volume Up (+) to confirm safe.", Toast.LENGTH_LONG).show();
         });
 
         binding.btnSendHelpNow.setOnClickListener(v -> {
@@ -62,6 +63,21 @@ public class CrashCountdownActivity extends AppCompatActivity {
             SosManager.triggerCrashAlert(this, "Immediate Crash Help Requested by User");
             finish();
         });
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
+        if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP) {
+            if (isOkTapped) {
+                cancelCountdown();
+                Toast.makeText(this, "Alert successfully cancelled. You are safe.", Toast.LENGTH_LONG).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Please tap 'I AM OK' first, then press Volume Up (+) to cancel.", Toast.LENGTH_LONG).show();
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     private void startCountdown() {
