@@ -23,21 +23,40 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class SosManager {
 
     private static final String TAG = "SosManager";
 
-    public static String getCurrentLiveLocation(Context context) {
+    public static class LocationResult {
+        public String mapsLink;
+        public String accuracyInfo;
+        public String timestampInfo;
+
+        public LocationResult(String mapsLink, String accuracyInfo, String timestampInfo) {
+            this.mapsLink = mapsLink;
+            this.accuracyInfo = accuracyInfo;
+            this.timestampInfo = timestampInfo;
+        }
+    }
+
+    public static LocationResult getCurrentLocationDetails(Context context) {
+        String mapsLink = "https://maps.google.com/?q=18.5204,73.8567";
+        String accuracyInfo = "Accuracy: Unknown";
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        String timestampInfo = sdf.format(new Date());
+
         try {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                 FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(context);
 
-                // Request active high-accuracy fresh GPS fix
                 CurrentLocationRequest request = new CurrentLocationRequest.Builder()
                         .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
                         .setDurationMillis(4000)
@@ -54,50 +73,53 @@ public class SosManager {
                     }
                 }
 
+                Location loc = null;
                 if (task.isSuccessful() && task.getResult() != null) {
-                    Location loc = task.getResult();
-                    return "https://maps.google.com/?q=" + loc.getLatitude() + "," + loc.getLongitude();
-                }
-
-                // Fallback to last known location if active fix times out
-                Task<Location> lastTask = fusedClient.getLastLocation();
-                startTime = System.currentTimeMillis();
-                while (!lastTask.isComplete() && (System.currentTimeMillis() - startTime) < 2000) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
+                    loc = task.getResult();
+                } else {
+                    Task<Location> lastTask = fusedClient.getLastLocation();
+                    startTime = System.currentTimeMillis();
+                    while (!lastTask.isComplete() && (System.currentTimeMillis() - startTime) < 2000) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+                    if (lastTask.isSuccessful() && lastTask.getResult() != null) {
+                        loc = lastTask.getResult();
                     }
                 }
 
-                if (lastTask.isSuccessful() && lastTask.getResult() != null) {
-                    Location loc = lastTask.getResult();
-                    return "https://maps.google.com/?q=" + loc.getLatitude() + "," + loc.getLongitude();
+                if (loc == null) {
+                    LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+                    if (locationManager != null) {
+                        Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        Location netLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                        loc = gpsLocation != null ? gpsLocation : netLocation;
+                    }
                 }
 
-                // Fallback to LocationManager provider
-                LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-                if (locationManager != null) {
-                    Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    Location netLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                    Location bestLocation = gpsLocation != null ? gpsLocation : netLocation;
-                    if (bestLocation != null) {
-                        return "https://maps.google.com/?q=" + bestLocation.getLatitude() + "," + bestLocation.getLongitude();
-                    }
+                if (loc != null) {
+                    double lat = loc.getLatitude();
+                    double lng = loc.getLongitude();
+                    mapsLink = "https://maps.google.com/?q=" + lat + "," + lng;
+                    accuracyInfo = loc.hasAccuracy() ? "±" + Math.round(loc.getAccuracy()) + "m" : "GPS Fix";
+                    timestampInfo = sdf.format(new Date(loc.getTime()));
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error fetching live GPS location via FusedClient", e);
+            Log.e(TAG, "Error fetching live GPS location details", e);
         }
-        // Fallback live location link
-        return "https://maps.google.com/?q=18.5204,73.8567";
+
+        return new LocationResult(mapsLink, accuracyInfo, timestampInfo);
     }
 
     public static long triggerDangerSos(Context context, String customDetails) {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
-        String mapsLink = getCurrentLiveLocation(context);
+        LocationResult locResult = getCurrentLocationDetails(context);
         String details = (customDetails != null && !customDetails.isEmpty())
                 ? customDetails
                 : "Silent Danger SOS Triggered from Mobile App";
@@ -105,7 +127,7 @@ public class SosManager {
         Incident incident = new Incident(
                 "DANGER_SOS",
                 System.currentTimeMillis(),
-                mapsLink,
+                locResult.mapsLink,
                 "POLICE_NOTIFIED",
                 true,
                 details
@@ -121,7 +143,8 @@ public class SosManager {
                 ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
                 : "";
 
-        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " has triggered a Danger SOS. Live Location Map: " + mapsLink + medicalInfo + ". Please send help immediately!";
+        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " triggered Danger SOS. Live Map: " + locResult.mapsLink +
+                " (Accuracy: " + locResult.accuracyInfo + ", Time: " + locResult.timestampInfo + ")" + medicalInfo + ". Please send help immediately!";
 
         // Send SMS asynchronously in background thread to prevent UI freeze / ANR
         new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
@@ -132,13 +155,13 @@ public class SosManager {
     public static long triggerCrashAlert(Context context, String details) {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
-        String mapsLink = getCurrentLiveLocation(context);
+        LocationResult locResult = getCurrentLocationDetails(context);
         String crashDetails = (details != null && !details.isEmpty()) ? details : "Severe Vehicle Crash Impact Detected (>4.0g)";
 
         Incident incident = new Incident(
                 "CRASH",
                 System.currentTimeMillis(),
-                mapsLink,
+                locResult.mapsLink,
                 "AMBULANCE_DISPATCHED",
                 true,
                 crashDetails
@@ -154,7 +177,8 @@ public class SosManager {
         String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
         String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
 
-        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " was involved in a severe road crash. Live Location Map: " + mapsLink +
+        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " involved in road crash. Live Map: " + locResult.mapsLink +
+                " (Accuracy: " + locResult.accuracyInfo + ", Time: " + locResult.timestampInfo + ")" +
                 ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
                 ". Ambulance dispatched and hospital pre-alerted!";
 
@@ -166,7 +190,6 @@ public class SosManager {
 
     private static void sendSmsToEmergencyContacts(Context context, String message) {
         try {
-            // Check if SEND_SMS permission is granted before trying to send SMS
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
                 Log.w(TAG, "SEND_SMS permission not granted. Skipping SMS dispatch.");
                 new Handler(Looper.getMainLooper()).post(() ->
@@ -198,7 +221,7 @@ public class SosManager {
                     try {
                         if (smsManager != null) {
                             ArrayList<String> parts = smsManager.divideMessage(message);
-                            if (parts.size() > 0) {
+                            if (!parts.isEmpty()) {
                                 smsManager.sendMultipartTextMessage(contact.getPhone(), null, parts, null, null);
                             }
 
