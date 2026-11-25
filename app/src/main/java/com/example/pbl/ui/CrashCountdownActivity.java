@@ -21,7 +21,7 @@ public class CrashCountdownActivity extends AppCompatActivity {
     private ActivityCrashCountdownBinding binding;
     private CountDownTimer countDownTimer;
     private Vibrator vibrator;
-    private Ringtone alarmRingtone;
+    private Ringtone warningRingtone;
     private boolean isOkTapped = false;
 
     @Override
@@ -53,7 +53,7 @@ public class CrashCountdownActivity extends AppCompatActivity {
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         startVibration();
-        startLoudAlarm();
+        startWarningSound();
 
         startCountdown();
 
@@ -101,7 +101,7 @@ public class CrashCountdownActivity extends AppCompatActivity {
                     binding.tvCountdownNumber.setText("0");
                 }
                 stopVibration();
-                stopLoudAlarm();
+                stopWarningSound();
                 SosManager.triggerCrashAlert(CrashCountdownActivity.this, "Critical Crash: User Non-Responsive during 10s Countdown");
                 finish();
             }
@@ -113,7 +113,7 @@ public class CrashCountdownActivity extends AppCompatActivity {
             countDownTimer.cancel();
         }
         stopVibration();
-        stopLoudAlarm();
+        stopWarningSound();
     }
 
     private void startVibration() {
@@ -132,28 +132,25 @@ public class CrashCountdownActivity extends AppCompatActivity {
         }
     }
 
-    private void startLoudAlarm() {
+    private void startWarningSound() {
         try {
-            Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            if (alarmUri == null) {
-                alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+            Uri warningUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            if (warningUri == null) {
+                warningUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             }
-            alarmRingtone = RingtoneManager.getRingtone(getApplicationContext(), alarmUri);
-            if (alarmRingtone != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    alarmRingtone.setLooping(true);
-                }
-                alarmRingtone.play();
+            warningRingtone = RingtoneManager.getRingtone(getApplicationContext(), warningUri);
+            if (warningRingtone != null) {
+                warningRingtone.play();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void stopLoudAlarm() {
+    private void stopWarningSound() {
         try {
-            if (alarmRingtone != null && alarmRingtone.isPlaying()) {
-                alarmRingtone.stop();
+            if (warningRingtone != null && warningRingtone.isPlaying()) {
+                warningRingtone.stop();
             }
         } catch (Exception e) {
             e.printStackTrace();

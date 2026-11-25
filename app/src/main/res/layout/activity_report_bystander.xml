@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Report a road accident witnessed nearby. Location and details are dispatched to nearest ambulance and emergency dashboard."
+            android:text="Report a road accident witnessed nearby. Location and photo details are dispatched to nearest ambulance and emergency dashboard."
             android:textColor="#64748B"
             android:textSize="13sp"
             android:layout_marginBottom="20dp" />
@@ -34,10 +34,6 @@
             android:layout_height="wrap_content"
             android:hint="Accident Location / Landmark"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
             android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -54,10 +50,6 @@
             android:layout_height="wrap_content"
             android:hint="Vehicles Involved / Description"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            app:boxCornerRadiusTopStart="12dp"
-            app:boxCornerRadiusTopEnd="12dp"
-            app:boxCornerRadiusBottomStart="12dp"
-            app:boxCornerRadiusBottomEnd="12dp"
             android:layout_marginBottom="16dp">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -70,11 +62,33 @@
                 android:text="Car collided with motorcycle, victim conscious" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Camera Capture Section -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_capture_photo"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Take Accident Photo (Camera)"
+            android:textSize="14sp"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:backgroundTint="#2563EB"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <ImageView
+            android:id="@+id/iv_accident_photo"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:scaleType="centerCrop"
+            android:background="#E2E8F0"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="Accident Evidence Photo" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Estimated Severity Level"
-            android:textColor="#0F172A"
+            android:textColor="#334155"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
@@ -90,7 +104,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="#334155"
                 android:text="Minor" />
 
             <RadioButton
@@ -111,7 +124,6 @@
             android:text="SUBMIT REPORT &amp; DISPATCH AMBULANCE"
             android:textSize="15sp"
             android:textStyle="bold"
-            app:cornerRadius="12dp"
             app:backgroundTint="#DC2626"
             android:textColor="#FFFFFF" />
 

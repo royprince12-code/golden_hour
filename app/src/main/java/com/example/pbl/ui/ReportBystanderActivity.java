@@ -1,8 +1,14 @@
 package com.example.pbl.ui;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.pbl.R;
@@ -13,12 +19,41 @@ import com.example.pbl.model.Incident;
 public class ReportBystanderActivity extends AppCompatActivity {
 
     private ActivityReportBystanderBinding binding;
+    private ActivityResultLauncher<Intent> cameraLauncher;
+    private boolean hasPhoto = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityReportBystanderBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        cameraLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Bundle extras = result.getData().getExtras();
+                        if (extras != null) {
+                            Bitmap imageBitmap = (Bitmap) extras.get("data");
+                            if (imageBitmap != null) {
+                                binding.ivAccidentPhoto.setImageBitmap(imageBitmap);
+                                binding.ivAccidentPhoto.setVisibility(View.VISIBLE);
+                                hasPhoto = true;
+                                Toast.makeText(this, "Accident photo attached!", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+                }
+        );
+
+        binding.btnCapturePhoto.setOnClickListener(v -> {
+            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            try {
+                cameraLauncher.launch(takePictureIntent);
+            } catch (Exception e) {
+                Toast.makeText(this, "Camera not available", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         binding.btnSubmitBystander.setOnClickListener(v -> submitBystanderReport());
     }
@@ -33,13 +68,15 @@ public class ReportBystanderActivity extends AppCompatActivity {
             return;
         }
 
+        String photoNote = hasPhoto ? " [Photo Evidence Attached]" : "";
+
         Incident incident = new Incident(
                 "BYSTANDER_REPORT",
                 System.currentTimeMillis(),
                 location,
                 "AMBULANCE_DISPATCHED",
                 isCritical,
-                "Bystander Witness Report: " + details
+                "Bystander Witness Report: " + details + photoNote
         );
 
         DatabaseHelper.getInstance(this).addIncident(incident);
