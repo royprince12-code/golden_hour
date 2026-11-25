@@ -34,6 +34,8 @@
         app:menu="@menu/bottom_nav_menu"
         app:labelVisibilityMode="labeled"
         android:background="#FFFFFF"
+        app:itemTextColor="#0F172A"
+        app:itemIconTint="#2563EB"
         app:elevation="8dp" />
 
 </LinearLayout>
