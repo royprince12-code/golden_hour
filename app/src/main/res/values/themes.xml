@@ -4,7 +4,30 @@
         <item name="colorPrimary">@color/primary_accent</item>
         <item name="colorError">@color/emergency_accent</item>
         <item name="android:windowBackground">@color/screen_background</item>
+        <item name="colorSurface">@color/input_bg</item>
+        <item name="colorOnSurface">@color/input_text</item>
+        <item name="colorOnSurfaceVariant">@color/secondary_text</item>
+        <item name="colorOutline">@color/input_border</item>
+        <item name="android:textColorPrimary">@color/input_text</item>
+        <item name="android:textColorSecondary">@color/secondary_text</item>
+        <item name="android:textColorHint">@color/input_hint</item>
+        <item name="android:editTextColor">@color/input_text</item>
+
+        <!-- Default TextInputLayout style -->
+        <item name="textInputStyle">@style/Widget.GoldenHour.TextInputLayout</item>
     </style>
 
     <style name="Theme.Pbl" parent="Base.Theme.Pbl" />
+
+    <!-- Custom GoldenHour Input Field Style -->
+    <style name="Widget.GoldenHour.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/box_stroke_color</item>
+        <item name="hintTextColor">@color/hint_text_color</item>
+        <item name="placeholderTextColor">@color/secondary_text</item>
+        <item name="boxBackgroundColor">@color/input_bg</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+    </style>
 </resources>
