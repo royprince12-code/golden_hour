@@ -27,6 +27,7 @@ public class SosManager {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
         String location = "Lat: 18.5204, Lng: 73.8567 (Pune Central)";
+        String mapsLink = "https://maps.google.com/?q=18.5204,73.8567";
         String details = (customDetails != null && !customDetails.isEmpty())
                 ? customDetails
                 : "Silent Danger SOS Triggered from Mobile App";
@@ -50,7 +51,7 @@ public class SosManager {
                 ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
                 : "";
 
-        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " has triggered a Danger SOS. Location: " + location + medicalInfo + ". Please send help immediately!";
+        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " has triggered a Danger SOS. Live Location Map: " + mapsLink + medicalInfo + ". Please send help immediately!";
 
         // Send SMS asynchronously in background thread to prevent UI freeze / ANR
         new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
@@ -62,6 +63,7 @@ public class SosManager {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
         String location = "Lat: 18.5312, Lng: 73.8445 (Highway Km 12)";
+        String mapsLink = "https://maps.google.com/?q=18.5312,73.8445";
         String crashDetails = (details != null && !details.isEmpty()) ? details : "Severe Vehicle Crash Impact Detected (>4.0g)";
 
         Incident incident = new Incident(
@@ -83,7 +85,7 @@ public class SosManager {
         String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
         String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
 
-        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " was involved in a severe road crash. Location: " + location +
+        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " was involved in a severe road crash. Live Location Map: " + mapsLink +
                 ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
                 ". Ambulance dispatched and hospital pre-alerted!";
 
