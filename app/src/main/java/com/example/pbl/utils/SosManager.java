@@ -16,6 +16,7 @@ import com.example.pbl.model.EmergencyContact;
 import com.example.pbl.model.Incident;
 import com.example.pbl.model.UserProfile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SosManager {
@@ -49,7 +50,7 @@ public class SosManager {
                 ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
                 : "";
 
-        String smsMessage = "EMERGENCY ALERT! " + userName + " has triggered a Danger SOS. Location: " + location + medicalInfo + ". Please send help immediately!";
+        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " has triggered a Danger SOS. Location: " + location + medicalInfo + ". Please send help immediately!";
 
         // Send SMS asynchronously in background thread to prevent UI freeze / ANR
         new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
@@ -82,7 +83,7 @@ public class SosManager {
         String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
         String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
 
-        String smsMessage = "CRASH DETECTED! " + userName + " was involved in a severe road accident. Location: " + location +
+        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " was involved in a severe road crash. Location: " + location +
                 ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
                 ". Ambulance dispatched and hospital pre-alerted!";
 
@@ -96,9 +97,9 @@ public class SosManager {
         try {
             // Check if SEND_SMS permission is granted before trying to send SMS
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "SEND_SMS permission not granted. Skipping SMS dispatch to prevent SecurityException crash.");
+                Log.w(TAG, "SEND_SMS permission not granted. Skipping SMS dispatch.");
                 new Handler(Looper.getMainLooper()).post(() ->
-                    Toast.makeText(context, "Emergency Alert Logged! (Grant SMS permission in settings to send SMS)", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Alert Logged! Please grant SMS permission in App Settings to send emergency text messages.", Toast.LENGTH_LONG).show()
                 );
                 return;
             }
@@ -125,10 +126,16 @@ public class SosManager {
                 if (contact.getPhone() != null && !contact.getPhone().isEmpty()) {
                     try {
                         if (smsManager != null) {
-                            smsManager.sendTextMessage(contact.getPhone(), null, message, null, null);
+                            ArrayList<String> parts = smsManager.divideMessage(message);
+                            if (parts.size() > 1) {
+                                smsManager.sendMultipartTextMessage(contact.getPhone(), null, parts, null, null);
+                            } else {
+                                smsManager.sendTextMessage(contact.getPhone(), null, message, null, null);
+                            }
+
                             if (alertedNames.length() > 0) alertedNames.append(", ");
                             alertedNames.append(contact.getName());
-                            Log.i(TAG, "Real SMS dispatched to " + contact.getName() + " (" + contact.getPhone() + ")");
+                            Log.i(TAG, "Real multi-part SMS dispatched to " + contact.getName() + " (" + contact.getPhone() + ")");
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to send SMS to " + contact.getPhone(), e);
@@ -138,7 +145,7 @@ public class SosManager {
 
             final String names = alertedNames.length() > 0 ? alertedNames.toString() : "Contacts";
             new Handler(Looper.getMainLooper()).post(() ->
-                Toast.makeText(context, "EMERGENCY SMS SENT to: " + names, Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "EMERGENCY WARNING SMS SENT to: " + names, Toast.LENGTH_LONG).show()
             );
         } catch (Exception e) {
             Log.e(TAG, "Exception in sendSmsToEmergencyContacts", e);
