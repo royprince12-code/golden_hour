@@ -6,8 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,14 +36,17 @@ public class HomeFragment extends Fragment {
     private static final String KEY_PRIVACY_ACCEPTED = "privacy_policy_accepted";
 
     private FragmentHomeBinding binding;
-    private ActivityResultLauncher<String[]> permissionLauncher;
+    private ActivityResultLauncher<String[]> foregroundPermissionLauncher;
+    private ActivityResultLauncher<String> backgroundPermissionLauncher;
+    private ActivityResultLauncher<Intent> gpsSettingsLauncher;
+    private ActivityResultLauncher<Intent> appSettingsLauncher;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Register runtime permission launcher
-        permissionLauncher = registerForActivityResult(
+        // Register launcher for foreground permissions (Fine/Coarse Location, SMS, Notifications)
+        foregroundPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
                     boolean allGranted = true;
@@ -52,16 +58,37 @@ public class HomeFragment extends Fragment {
                     }
 
                     if (allGranted) {
-                        Toast.makeText(requireContext(), "All emergency permissions granted!", Toast.LENGTH_SHORT).show();
-                        enableRideMode();
+                        checkBackgroundLocation();
                     } else {
-                        Toast.makeText(requireContext(), "Permissions denied. Location & Notifications are required for Ride Mode sensing.", Toast.LENGTH_LONG).show();
-                        if (binding != null) {
-                            binding.switchRideMode.setChecked(false);
-                            updateRideModeStatusUI(false);
-                        }
+                        handlePermissionDenied();
                     }
                 }
+        );
+
+        // Register launcher for Android 10+ background location permission
+        backgroundPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        checkGpsAndStartRideMode();
+                    } else {
+                        Toast.makeText(requireContext(), "Background location access is recommended so crash sensing works while screen is off.", Toast.LENGTH_LONG).show();
+                        // Proceed to GPS check even if background location is denied, as foreground location allows sensing when open
+                        checkGpsAndStartRideMode();
+                    }
+                }
+        );
+
+        // Launcher for GPS settings intent
+        gpsSettingsLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> verifyAndStartRideMode()
+        );
+
+        // Launcher for Application Settings intent
+        appSettingsLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> verifyAndStartRideMode()
         );
     }
 
@@ -76,10 +103,8 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Check privacy policy on first launch
         checkPrivacyPolicyConsent();
 
-        // Ride mode switch setup
         boolean isRunning = CrashDetectionService.isRunning();
         binding.switchRideMode.setChecked(isRunning);
         updateRideModeStatusUI(isRunning);
@@ -88,9 +113,9 @@ public class HomeFragment extends Fragment {
             if (isChecked) {
                 if (!hasPrivacyPolicyConsent()) {
                     binding.switchRideMode.setChecked(false);
-                    showPrivacyPolicyDialog(() -> checkAndRequestPermissions());
+                    showPrivacyPolicyDialog(() -> verifyAndStartRideMode());
                 } else {
-                    checkAndRequestPermissions();
+                    verifyAndStartRideMode();
                 }
             } else {
                 CrashDetectionService.stopService(requireContext());
@@ -99,7 +124,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Danger SOS Button
         binding.cardSos.setOnClickListener(v -> {
             if (!hasPrivacyPolicyConsent()) {
                 showPrivacyPolicyDialog(() -> SosManager.triggerDangerSos(requireContext(), "Emergency Danger SOS button pressed by user."));
@@ -108,17 +132,168 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Fake Call Tool
         binding.cardFakeCall.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), FakeCallActivity.class);
             startActivity(intent);
         });
 
-        // Bystander Report Tool
         binding.cardBystanderReport.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), ReportBystanderActivity.class);
             startActivity(intent);
         });
+    }
+
+    private void verifyAndStartRideMode() {
+        // Step 1: Check foreground permissions
+        List<String> missingPermissions = getMissingForegroundPermissions();
+
+        if (!missingPermissions.isEmpty()) {
+            explainAndRequestPermissions(missingPermissions);
+        } else {
+            // Step 2: Check background location permission
+            checkBackgroundLocation();
+        }
+    }
+
+    private List<String> getMissingForegroundPermissions() {
+        List<String> requiredPermissions = new ArrayList<>();
+        requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        requiredPermissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        requiredPermissions.add(Manifest.permission.SEND_SMS);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requiredPermissions.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
+        List<String> missing = new ArrayList<>();
+        for (String perm : requiredPermissions) {
+            if (ContextCompat.checkSelfPermission(requireContext(), perm) != PackageManager.PERMISSION_GRANTED) {
+                missing.add(perm);
+            }
+        }
+        return missing;
+    }
+
+    private void explainAndRequestPermissions(List<String> missingPermissions) {
+        boolean showRationale = false;
+        for (String perm : missingPermissions) {
+            if (shouldShowRequestPermissionRationale(perm)) {
+                showRationale = true;
+                break;
+            }
+        }
+
+        if (showRationale) {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Permissions Required for Ride Mode")
+                    .setMessage("Ride Mode requires Location, SMS, and Notification permissions to detect vehicle crash impacts and send emergency alerts to your contacts.")
+                    .setPositiveButton("Grant Permissions", (dialog, which) -> {
+                        foregroundPermissionLauncher.launch(missingPermissions.toArray(new String[0]));
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> handlePermissionDenied())
+                    .show();
+        } else {
+            foregroundPermissionLauncher.launch(missingPermissions.toArray(new String[0]));
+        }
+    }
+
+    private void checkBackgroundLocation() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Background Location Access")
+                        .setMessage("To detect crashes while your screen is locked or while using other apps, please select 'Allow all the time' for location access.")
+                        .setPositiveButton("Grant Access", (dialog, which) -> {
+                            backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                        })
+                        .setNegativeButton("Skip for Now", (dialog, which) -> {
+                            checkGpsAndStartRideMode();
+                        })
+                        .show();
+                return;
+            }
+        }
+        checkGpsAndStartRideMode();
+    }
+
+    private void checkGpsAndStartRideMode() {
+        LocationManager locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
+        boolean isGpsEnabled = false;
+        boolean isNetworkEnabled = false;
+
+        if (locationManager != null) {
+            isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        }
+
+        if (!isGpsEnabled && !isNetworkEnabled) {
+            if (binding != null) {
+                binding.switchRideMode.setChecked(false);
+                updateRideModeStatusUI(false);
+            }
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Location Services Disabled")
+                    .setMessage("Device Location (GPS) is turned off. GoldenHour requires Location Services enabled to pinpoint your position during emergencies.")
+                    .setPositiveButton("Enable GPS in Settings", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        gpsSettingsLauncher.launch(intent);
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> {
+                        Toast.makeText(requireContext(), "Ride Mode cannot start without Location Services enabled.", Toast.LENGTH_LONG).show();
+                    })
+                    .show();
+        } else {
+            enableRideModeService();
+        }
+    }
+
+    private void enableRideModeService() {
+        try {
+            CrashDetectionService.startService(requireContext());
+            if (binding != null) {
+                binding.switchRideMode.setChecked(true);
+                updateRideModeStatusUI(true);
+            }
+            Toast.makeText(requireContext(), "Ride Mode Activated: Real-time sensor monitoring active", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Failed to start Ride Mode: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            if (binding != null) {
+                binding.switchRideMode.setChecked(false);
+                updateRideModeStatusUI(false);
+            }
+        }
+    }
+
+    private void handlePermissionDenied() {
+        if (binding != null) {
+            binding.switchRideMode.setChecked(false);
+            updateRideModeStatusUI(false);
+        }
+
+        boolean permanentlyDenied = false;
+        List<String> missing = getMissingForegroundPermissions();
+        for (String perm : missing) {
+            if (!shouldShowRequestPermissionRationale(perm)) {
+                permanentlyDenied = true;
+                break;
+            }
+        }
+
+        if (permanentlyDenied) {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Permissions Denied")
+                    .setMessage("Required emergency permissions were permanently denied. Please enable Location, SMS, and Notification permissions in App Settings to use Ride Mode.")
+                    .setPositiveButton("Open Settings", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", requireContext().getPackageName(), null);
+                        intent.setData(uri);
+                        appSettingsLauncher.launch(intent);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } else {
+            Toast.makeText(requireContext(), "Ride Mode requires Location, SMS, and Notification permissions.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void checkPrivacyPolicyConsent() {
@@ -153,42 +328,6 @@ public class HomeFragment extends Fragment {
                     Toast.makeText(requireContext(), "Policy declined. Emergency sensing features will be disabled.", Toast.LENGTH_LONG).show();
                 })
                 .show();
-    }
-
-    private void checkAndRequestPermissions() {
-        List<String> requiredPermissions = new ArrayList<>();
-        requiredPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        requiredPermissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-        requiredPermissions.add(Manifest.permission.SEND_SMS);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requiredPermissions.add(Manifest.permission.POST_NOTIFICATIONS);
-        }
-
-        List<String> missingPermissions = new ArrayList<>();
-        for (String perm : requiredPermissions) {
-            if (ContextCompat.checkSelfPermission(requireContext(), perm) != PackageManager.PERMISSION_GRANTED) {
-                missingPermissions.add(perm);
-            }
-        }
-
-        if (missingPermissions.isEmpty()) {
-            enableRideMode();
-        } else {
-            permissionLauncher.launch(missingPermissions.toArray(new String[0]));
-        }
-    }
-
-    private void enableRideMode() {
-        try {
-            CrashDetectionService.startService(requireContext());
-            updateRideModeStatusUI(true);
-            Toast.makeText(requireContext(), "Ride Mode Activated: Real-time sensor monitoring active", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Toast.makeText(requireContext(), "Failed to start Ride Mode service: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            binding.switchRideMode.setChecked(false);
-            updateRideModeStatusUI(false);
-        }
     }
 
     private void updateRideModeStatusUI(boolean isEnabled) {
