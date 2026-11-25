@@ -25,6 +25,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Pbl">
 
+        <!-- Google Maps API Key Integration Slot -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="YOUR_GOOGLE_MAPS_API_KEY" />
+
         <activity
             android:name=".ui.SplashActivity"
             android:exported="true"
