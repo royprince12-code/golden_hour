@@ -16,7 +16,7 @@ import java.util.List;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "golden_hour.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     private static DatabaseHelper instance;
 
@@ -32,6 +32,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_PROFILE_BLOOD_GROUP = "blood_group";
     private static final String KEY_PROFILE_ALLERGIES = "allergies";
     private static final String KEY_PROFILE_CONDITIONS = "medical_conditions";
+    private static final String KEY_PROFILE_AGE = "age";
+    private static final String KEY_PROFILE_HEIGHT_WEIGHT = "height_weight";
+    private static final String KEY_PROFILE_MEDICATIONS = "medications";
+    private static final String KEY_PROFILE_SURGERIES = "surgeries";
+    private static final String KEY_PROFILE_ORGAN_DONOR = "organ_donor";
+    private static final String KEY_PROFILE_NOTES = "notes";
 
     // Contact Columns
     private static final String KEY_CONTACT_ID = "id";
@@ -67,7 +73,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + KEY_PROFILE_PHONE + " TEXT,"
                 + KEY_PROFILE_BLOOD_GROUP + " TEXT,"
                 + KEY_PROFILE_ALLERGIES + " TEXT,"
-                + KEY_PROFILE_CONDITIONS + " TEXT" + ")";
+                + KEY_PROFILE_CONDITIONS + " TEXT,"
+                + KEY_PROFILE_AGE + " TEXT,"
+                + KEY_PROFILE_HEIGHT_WEIGHT + " TEXT,"
+                + KEY_PROFILE_MEDICATIONS + " TEXT,"
+                + KEY_PROFILE_SURGERIES + " TEXT,"
+                + KEY_PROFILE_ORGAN_DONOR + " TEXT,"
+                + KEY_PROFILE_NOTES + " TEXT" + ")";
 
         String CREATE_CONTACTS_TABLE = "CREATE TABLE " + TABLE_CONTACTS + "("
                 + KEY_CONTACT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -91,10 +103,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROFILE);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_INCIDENTS);
-        onCreate(db);
+        if (oldVersion < 2) {
+            try {
+                db.execSQL("ALTER TABLE " + TABLE_PROFILE + " ADD COLUMN " + KEY_PROFILE_AGE + " TEXT");
+                db.execSQL("ALTER TABLE " + TABLE_PROFILE + " ADD COLUMN " + KEY_PROFILE_HEIGHT_WEIGHT + " TEXT");
+                db.execSQL("ALTER TABLE " + TABLE_PROFILE + " ADD COLUMN " + KEY_PROFILE_MEDICATIONS + " TEXT");
+                db.execSQL("ALTER TABLE " + TABLE_PROFILE + " ADD COLUMN " + KEY_PROFILE_SURGERIES + " TEXT");
+                db.execSQL("ALTER TABLE " + TABLE_PROFILE + " ADD COLUMN " + KEY_PROFILE_ORGAN_DONOR + " TEXT");
+                db.execSQL("ALTER TABLE " + TABLE_PROFILE + " ADD COLUMN " + KEY_PROFILE_NOTES + " TEXT");
+            } catch (Exception e) {
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_PROFILE);
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACTS);
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_INCIDENTS);
+                onCreate(db);
+            }
+        }
     }
 
     // --- User Profile Operations ---
@@ -107,6 +130,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_PROFILE_BLOOD_GROUP, profile.getBloodGroup());
         values.put(KEY_PROFILE_ALLERGIES, profile.getAllergies());
         values.put(KEY_PROFILE_CONDITIONS, profile.getMedicalConditions());
+        values.put(KEY_PROFILE_AGE, profile.getAge());
+        values.put(KEY_PROFILE_HEIGHT_WEIGHT, profile.getHeightWeight());
+        values.put(KEY_PROFILE_MEDICATIONS, profile.getMedications());
+        values.put(KEY_PROFILE_SURGERIES, profile.getSurgeries());
+        values.put(KEY_PROFILE_ORGAN_DONOR, profile.getOrganDonor());
+        values.put(KEY_PROFILE_NOTES, profile.getNotes());
 
         db.insertWithOnConflict(TABLE_PROFILE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     }
@@ -123,11 +152,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     cursor.getString(cursor.getColumnIndexOrThrow(KEY_PROFILE_PHONE)),
                     cursor.getString(cursor.getColumnIndexOrThrow(KEY_PROFILE_BLOOD_GROUP)),
                     cursor.getString(cursor.getColumnIndexOrThrow(KEY_PROFILE_ALLERGIES)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(KEY_PROFILE_CONDITIONS))
+                    cursor.getString(cursor.getColumnIndexOrThrow(KEY_PROFILE_CONDITIONS)),
+                    getSafeString(cursor, KEY_PROFILE_AGE),
+                    getSafeString(cursor, KEY_PROFILE_HEIGHT_WEIGHT),
+                    getSafeString(cursor, KEY_PROFILE_MEDICATIONS),
+                    getSafeString(cursor, KEY_PROFILE_SURGERIES),
+                    getSafeString(cursor, KEY_PROFILE_ORGAN_DONOR),
+                    getSafeString(cursor, KEY_PROFILE_NOTES)
             );
             cursor.close();
         }
         return profile;
+    }
+
+    private String getSafeString(Cursor cursor, String columnName) {
+        int index = cursor.getColumnIndex(columnName);
+        if (index != -1 && !cursor.isNull(index)) {
+            return cursor.getString(index);
+        }
+        return "";
     }
 
     // --- Emergency Contacts Operations ---

@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:padding="20dp"
         android:clipToPadding="false"
-        android:paddingBottom="120dp">
+        android:paddingBottom="140dp">
 
         <!-- Title Banner Card -->
         <com.google.android.material.card.MaterialCardView
@@ -23,7 +23,7 @@
             app:cardBackgroundColor="@color/white"
             app:strokeWidth="1dp"
             app:strokeColor="@color/input_border"
-            android:layout_marginBottom="20dp">
+            android:layout_marginBottom="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -65,6 +65,74 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Lock Screen Display Settings Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/white"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/input_border"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Show Medical ID on Lock Screen"
+                            android:textColor="@color/input_text"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Displays emergency card on lock screen so responders can identify details without unlocking."
+                            android:textColor="@color/secondary_text"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switch_lockscreen_medical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_preview_lockscreen_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="14dp"
+                    android:text="Preview Lock Screen Medical Card"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:icon="@android:drawable/ic_menu_view"
+                    app:cornerRadius="10dp"
+                    app:backgroundTint="#334155"
+                    android:textColor="@color/white" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Form Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -82,12 +150,13 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
+                <!-- Name & Phone -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Full Name"
                     style="@style/Widget.GoldenHour.TextInputLayout"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="14dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_name"
@@ -105,7 +174,7 @@
                     android:layout_height="wrap_content"
                     android:hint="Phone Number"
                     style="@style/Widget.GoldenHour.TextInputLayout"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="14dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_phone"
@@ -118,30 +187,125 @@
                         android:inputType="phone" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Age & Height/Weight -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="14dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:hint="Age"
+                        style="@style/Widget.GoldenHour.TextInputLayout">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_age"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/input_text"
+                            android:textColorHint="@color/input_hint"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:inputType="number" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:hint="Height / Weight"
+                        style="@style/Widget.GoldenHour.TextInputLayout">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_height_weight"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/input_text"
+                            android:textColorHint="@color/input_hint"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Blood Group & Organ Donor -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="14dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:hint="Blood Group"
+                        style="@style/Widget.GoldenHour.TextInputLayout">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_blood_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/input_text"
+                            android:textColorHint="@color/input_hint"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:inputType="textCapCharacters" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:hint="Organ Donor (Yes/No)"
+                        style="@style/Widget.GoldenHour.TextInputLayout">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_organ_donor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/input_text"
+                            android:textColorHint="@color/input_hint"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Medical Conditions -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Blood Group (e.g. O+, A+, B-, AB+)"
+                    android:hint="Known Medical Conditions (e.g. Diabetes, Asthma)"
                     style="@style/Widget.GoldenHour.TextInputLayout"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="14dp">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_blood_group"
+                        android:id="@+id/et_conditions"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/input_text"
                         android:textColorHint="@color/input_hint"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:inputType="textCapCharacters" />
+                        android:inputType="textMultiLine"
+                        android:minLines="2" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Allergies -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Allergies (e.g. Penicillin, Latex, None)"
                     style="@style/Widget.GoldenHour.TextInputLayout"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="14dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_allergies"
@@ -155,15 +319,56 @@
                         android:minLines="2" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Medications -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Medical Conditions (e.g. Asthma, Diabetes, Heart)"
+                    android:hint="Current Medications"
+                    style="@style/Widget.GoldenHour.TextInputLayout"
+                    android:layout_marginBottom="14dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_medications"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/input_text"
+                        android:textColorHint="@color/input_hint"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:inputType="textMultiLine"
+                        android:minLines="2" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Surgeries -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Previous Surgeries"
+                    style="@style/Widget.GoldenHour.TextInputLayout"
+                    android:layout_marginBottom="14dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_surgeries"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/input_text"
+                        android:textColorHint="@color/input_hint"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:inputType="textMultiLine"
+                        android:minLines="2" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Notes -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Emergency Notes / Instructions"
                     style="@style/Widget.GoldenHour.TextInputLayout"
                     android:layout_marginBottom="24dp">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_conditions"
+                        android:id="@+id/et_notes"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/input_text"
