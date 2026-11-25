@@ -17,8 +17,10 @@ import com.example.pbl.db.DatabaseHelper;
 import com.example.pbl.model.EmergencyContact;
 import com.example.pbl.model.Incident;
 import com.example.pbl.model.UserProfile;
+import com.google.android.gms.location.CurrentLocationRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
@@ -34,10 +36,16 @@ public class SosManager {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                 FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(context);
-                Task<Location> task = fusedClient.getLastLocation();
 
+                // Request active high-accuracy fresh GPS fix
+                CurrentLocationRequest request = new CurrentLocationRequest.Builder()
+                        .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                        .setDurationMillis(4000)
+                        .build();
+
+                Task<Location> task = fusedClient.getCurrentLocation(request, null);
                 long startTime = System.currentTimeMillis();
-                while (!task.isComplete() && (System.currentTimeMillis() - startTime) < 2500) {
+                while (!task.isComplete() && (System.currentTimeMillis() - startTime) < 4500) {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -51,7 +59,24 @@ public class SosManager {
                     return "https://maps.google.com/?q=" + loc.getLatitude() + "," + loc.getLongitude();
                 }
 
-                // Fallback to LocationManager if fused client returns null
+                // Fallback to last known location if active fix times out
+                Task<Location> lastTask = fusedClient.getLastLocation();
+                startTime = System.currentTimeMillis();
+                while (!lastTask.isComplete() && (System.currentTimeMillis() - startTime) < 2000) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+
+                if (lastTask.isSuccessful() && lastTask.getResult() != null) {
+                    Location loc = lastTask.getResult();
+                    return "https://maps.google.com/?q=" + loc.getLatitude() + "," + loc.getLongitude();
+                }
+
+                // Fallback to LocationManager provider
                 LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
                 if (locationManager != null) {
                     Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
@@ -173,10 +198,8 @@ public class SosManager {
                     try {
                         if (smsManager != null) {
                             ArrayList<String> parts = smsManager.divideMessage(message);
-                            if (parts.size() > 1) {
+                            if (parts.size() > 0) {
                                 smsManager.sendMultipartTextMessage(contact.getPhone(), null, parts, null, null);
-                            } else {
-                                smsManager.sendTextMessage(contact.getPhone(), null, message, null, null);
                             }
 
                             if (alertedNames.length() > 0) alertedNames.append(", ");
