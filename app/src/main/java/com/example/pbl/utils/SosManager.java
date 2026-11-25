@@ -46,9 +46,10 @@ public class SosManager {
     }
 
     public static LocationResult getCurrentLocationDetails(Context context) {
-        String mapsLink = "https://maps.google.com/?q=18.5204,73.8567";
+        // Exact official Google Maps URL format specified in Step 3
+        String mapsLink = "https://www.google.com/maps/search/?api=1&query=18.5204,73.8567";
         String accuracyInfo = "Accuracy: Unknown";
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         String timestampInfo = sdf.format(new Date());
 
         try {
@@ -57,14 +58,15 @@ public class SosManager {
 
                 FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(context);
 
+                // Request fresh high-accuracy location (Step 2)
                 CurrentLocationRequest request = new CurrentLocationRequest.Builder()
                         .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-                        .setDurationMillis(4000)
+                        .setDurationMillis(5000)
                         .build();
 
                 Task<Location> task = fusedClient.getCurrentLocation(request, null);
                 long startTime = System.currentTimeMillis();
-                while (!task.isComplete() && (System.currentTimeMillis() - startTime) < 4500) {
+                while (!task.isComplete() && (System.currentTimeMillis() - startTime) < 5500) {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -77,6 +79,7 @@ public class SosManager {
                 if (task.isSuccessful() && task.getResult() != null) {
                     loc = task.getResult();
                 } else {
+                    // Fallback to last known location if current location timed out, validating age (< 5 mins)
                     Task<Location> lastTask = fusedClient.getLastLocation();
                     startTime = System.currentTimeMillis();
                     while (!lastTask.isComplete() && (System.currentTimeMillis() - startTime) < 2000) {
@@ -88,7 +91,10 @@ public class SosManager {
                         }
                     }
                     if (lastTask.isSuccessful() && lastTask.getResult() != null) {
-                        loc = lastTask.getResult();
+                        Location candidate = lastTask.getResult();
+                        if (System.currentTimeMillis() - candidate.getTime() < 300000) {
+                            loc = candidate;
+                        }
                     }
                 }
 
@@ -104,13 +110,29 @@ public class SosManager {
                 if (loc != null) {
                     double lat = loc.getLatitude();
                     double lng = loc.getLongitude();
-                    mapsLink = "https://maps.google.com/?q=" + lat + "," + lng;
-                    accuracyInfo = loc.hasAccuracy() ? "±" + Math.round(loc.getAccuracy()) + "m" : "GPS Fix";
-                    timestampInfo = sdf.format(new Date(loc.getTime()));
+                    float accuracy = loc.hasAccuracy() ? loc.getAccuracy() : -1.0f;
+                    String provider = loc.getProvider() != null ? loc.getProvider() : "unknown";
+                    long time = loc.getTime();
+                    timestampInfo = sdf.format(new Date(time));
+
+                    // Generate official Google Maps search URL with latitude first, longitude second (Step 3)
+                    mapsLink = "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng;
+                    accuracyInfo = (accuracy >= 0) ? "±" + Math.round(accuracy) + "m" : "GPS Fix";
+
+                    // Step 4: Useful Logcat debugging messages
+                    Log.i(TAG, "=== EMERGENCY LOCATION ACQUIRED ===");
+                    Log.i(TAG, "Latitude: " + lat);
+                    Log.i(TAG, "Longitude: " + lng);
+                    Log.i(TAG, "Accuracy: " + (accuracy >= 0 ? accuracy + " meters" : "Unknown"));
+                    Log.i(TAG, "Provider: " + provider);
+                    Log.i(TAG, "Timestamp: " + timestampInfo);
+                    Log.i(TAG, "Generated Google Maps URL: " + mapsLink);
+                } else {
+                    Log.w(TAG, "Failed to obtain valid fresh GPS location. Using default fallback location.");
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error fetching live GPS location details", e);
+            Log.e(TAG, "Error acquiring GPS location details", e);
         }
 
         return new LocationResult(mapsLink, accuracyInfo, timestampInfo);
