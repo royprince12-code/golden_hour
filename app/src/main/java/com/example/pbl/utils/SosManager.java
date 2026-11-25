@@ -17,6 +17,9 @@ import com.example.pbl.db.DatabaseHelper;
 import com.example.pbl.model.EmergencyContact;
 import com.example.pbl.model.Incident;
 import com.example.pbl.model.UserProfile;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,24 +30,40 @@ public class SosManager {
 
     public static String getCurrentLiveLocation(Context context) {
         try {
-            LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-            if (locationManager != null) {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
+                FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(context);
+                Task<Location> task = fusedClient.getLastLocation();
+
+                long startTime = System.currentTimeMillis();
+                while (!task.isComplete() && (System.currentTimeMillis() - startTime) < 2500) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+
+                if (task.isSuccessful() && task.getResult() != null) {
+                    Location loc = task.getResult();
+                    return "https://maps.google.com/?q=" + loc.getLatitude() + "," + loc.getLongitude();
+                }
+
+                // Fallback to LocationManager if fused client returns null
+                LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+                if (locationManager != null) {
                     Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                     Location netLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
                     Location bestLocation = gpsLocation != null ? gpsLocation : netLocation;
                     if (bestLocation != null) {
-                        double lat = bestLocation.getLatitude();
-                        double lng = bestLocation.getLongitude();
-                        return "https://maps.google.com/?q=" + lat + "," + lng;
+                        return "https://maps.google.com/?q=" + bestLocation.getLatitude() + "," + bestLocation.getLongitude();
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error fetching live GPS location", e);
+            Log.e(TAG, "Error fetching live GPS location via FusedClient", e);
         }
         // Fallback live location link
         return "https://maps.google.com/?q=18.5204,73.8567";
@@ -77,7 +96,7 @@ public class SosManager {
                 ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
                 : "";
 
-        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " has triggered a Danger SOS. Live Location: " + mapsLink + medicalInfo + ". Please send help immediately!";
+        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " has triggered a Danger SOS. Live Location Map: " + mapsLink + medicalInfo + ". Please send help immediately!";
 
         // Send SMS asynchronously in background thread to prevent UI freeze / ANR
         new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
@@ -110,7 +129,7 @@ public class SosManager {
         String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
         String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
 
-        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " was involved in a severe road crash. Live Location: " + mapsLink +
+        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " was involved in a severe road crash. Live Location Map: " + mapsLink +
                 ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
                 ". Ambulance dispatched and hospital pre-alerted!";
 
