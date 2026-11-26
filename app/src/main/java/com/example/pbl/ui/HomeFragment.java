@@ -38,6 +38,7 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private ActivityResultLauncher<String[]> foregroundPermissionLauncher;
     private ActivityResultLauncher<String> backgroundPermissionLauncher;
+    private ActivityResultLauncher<String> smsPermissionLauncher;
     private ActivityResultLauncher<Intent> gpsSettingsLauncher;
     private ActivityResultLauncher<Intent> appSettingsLauncher;
     private ActivityResultLauncher<Intent> overlaySettingsLauncher;
@@ -79,7 +80,20 @@ public class HomeFragment extends Fragment {
                 }
         );
 
-        // Launcher for Overlay settings intent (Open New Window in the Background)
+        // Register launcher for SMS permission when tapping SOS
+        smsPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        Toast.makeText(requireContext(), "SMS permission granted! You can now send SOS alerts.", Toast.LENGTH_SHORT).show();
+                        SosManager.triggerDangerSos(requireContext(), "Emergency Danger SOS button pressed by user.");
+                    } else {
+                        Toast.makeText(requireContext(), "SMS permission is required to dispatch emergency text warnings to your contacts.", Toast.LENGTH_LONG).show();
+                    }
+                }
+        );
+
+        // Register launcher for Overlay settings intent (Open New Window in the Background)
         overlaySettingsLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> checkGpsAndStartRideMode()
@@ -131,6 +145,12 @@ public class HomeFragment extends Fragment {
         });
 
         binding.cardSos.setOnClickListener(v -> {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+                smsPermissionLauncher.launch(Manifest.permission.SEND_SMS);
+                Toast.makeText(requireContext(), "Please grant SMS permission to send emergency alerts.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
             if (!hasPrivacyPolicyConsent()) {
                 showPrivacyPolicyDialog(() -> SosManager.triggerDangerSos(requireContext(), "Emergency Danger SOS button pressed by user."));
             } else {
@@ -224,22 +244,20 @@ public class HomeFragment extends Fragment {
 
     private void checkOverlayPermission() {
         // Permission 3: Open New Window in the Background ("Display pop-up windows while running in the background" / Draw Over Other Apps)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(requireContext())) {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Open New Window in Background (Pop-up Permission)")
-                        .setMessage("To allow GoldenHour to pop up the emergency crash warning window over other apps or from the background, please enable 'Display pop-up windows while running in the background' (Draw over other apps).")
-                        .setPositiveButton("Open Settings", (dialog, which) -> {
-                            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                    Uri.parse("package:" + requireContext().getPackageName()));
-                            overlaySettingsLauncher.launch(intent);
-                        })
-                        .setNegativeButton("Skip for Now", (dialog, which) -> {
-                            checkGpsAndStartRideMode();
-                        })
-                        .show();
-                return;
-            }
+        if (!Settings.canDrawOverlays(requireContext())) {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Open New Window in Background (Pop-up Permission)")
+                    .setMessage("To allow GoldenHour to pop up the emergency crash warning window over other apps or from the background, please enable 'Display pop-up windows while running in the background' (Draw over other apps).")
+                    .setPositiveButton("Open Settings", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:" + requireContext().getPackageName()));
+                        overlaySettingsLauncher.launch(intent);
+                    })
+                    .setNegativeButton("Skip for Now", (dialog, which) -> {
+                        checkGpsAndStartRideMode();
+                    })
+                    .show();
+            return;
         }
         checkGpsAndStartRideMode();
     }
@@ -361,7 +379,7 @@ public class HomeFragment extends Fragment {
     private void updateRideModeStatusUI(boolean isEnabled) {
         if (binding == null) return;
         if (binding.switchRideMode.isChecked() != isEnabled) {
-            binding.switchRideMode.setChecked(isEnabled);
+            binding.switchRideMode.setChecked(false);
         }
         if (isEnabled) {
             binding.tvRideModeStatus.setText("Sensor monitoring: Active (4.0g threshold)");
