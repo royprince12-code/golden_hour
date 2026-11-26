@@ -178,7 +178,28 @@ public class CrashDetectionService extends Service implements SensorEventListene
             Intent intent = new Intent(this, CrashCountdownActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-            // Directly launch the warning window immediately (whether locked or unlocked) with ZERO notifications sent
+            // Use Full-Screen Intent to bypass Android 10+ background activity start restrictions
+            PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                    this, 0, intent,
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+            );
+
+            NotificationCompat.Builder alertBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle("⚠️ CRITICAL ACCIDENT DETECTED!")
+                    .setContentText("Emergency countdown active. Opening warning window...")
+                    .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setFullScreenIntent(fullScreenPendingIntent, true)
+                    .setAutoCancel(true);
+
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.notify(9999, alertBuilder.build());
+            }
+
+            // Also directly start activity
             startActivity(intent);
         } catch (Exception e) {
             Log.e(TAG, "Error launching CrashCountdownActivity", e);
@@ -190,7 +211,7 @@ public class CrashDetectionService extends Service implements SensorEventListene
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     "Crash Detection Service",
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Monitors phone sensors in background");
             NotificationManager manager = getSystemService(NotificationManager.class);
