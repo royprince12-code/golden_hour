@@ -40,12 +40,13 @@ public class HomeFragment extends Fragment {
     private ActivityResultLauncher<String> backgroundPermissionLauncher;
     private ActivityResultLauncher<Intent> gpsSettingsLauncher;
     private ActivityResultLauncher<Intent> appSettingsLauncher;
+    private ActivityResultLauncher<Intent> overlaySettingsLauncher;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Register launcher for foreground permissions (Fine/Coarse Location, SMS, Notifications)
+        // Register launcher for foreground permissions (Fine/Coarse Location, SMS, Notifications [Show in Lock Screen])
         foregroundPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
@@ -70,13 +71,18 @@ public class HomeFragment extends Fragment {
                 new ActivityResultContracts.RequestPermission(),
                 isGranted -> {
                     if (isGranted) {
-                        checkGpsAndStartRideMode();
+                        checkOverlayPermission();
                     } else {
                         Toast.makeText(requireContext(), "Background location access is recommended so crash sensing works while screen is off.", Toast.LENGTH_LONG).show();
-                        // Proceed to GPS check even if background location is denied, as foreground location allows sensing when open
-                        checkGpsAndStartRideMode();
+                        checkOverlayPermission();
                     }
                 }
+        );
+
+        // Launcher for Overlay settings intent (Open New Window in the Background)
+        overlaySettingsLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> checkGpsAndStartRideMode()
         );
 
         // Launcher for GPS settings intent
@@ -144,7 +150,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void verifyAndStartRideMode() {
-        // Step 1: Check foreground permissions
+        // Step 1: Check foreground permissions (includes Show in Lock Screen / Notifications)
         List<String> missingPermissions = getMissingForegroundPermissions();
 
         if (!missingPermissions.isEmpty()) {
@@ -205,6 +211,28 @@ public class HomeFragment extends Fragment {
                         .setMessage("To detect crashes while your screen is locked or while using other apps, please select 'Allow all the time' for location access.")
                         .setPositiveButton("Grant Access", (dialog, which) -> {
                             backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                        })
+                        .setNegativeButton("Skip for Now", (dialog, which) -> {
+                            checkOverlayPermission();
+                        })
+                        .show();
+                return;
+            }
+        }
+        checkOverlayPermission();
+    }
+
+    private void checkOverlayPermission() {
+        // Permission 3: Open New Window in the Background ("Display pop-up windows while running in the background" / Draw Over Other Apps)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(requireContext())) {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Open New Window in Background (Pop-up Permission)")
+                        .setMessage("To allow GoldenHour to pop up the emergency crash warning window over other apps or from the background, please enable 'Display pop-up windows while running in the background' (Draw over other apps).")
+                        .setPositiveButton("Open Settings", (dialog, which) -> {
+                            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    Uri.parse("package:" + requireContext().getPackageName()));
+                            overlaySettingsLauncher.launch(intent);
                         })
                         .setNegativeButton("Skip for Now", (dialog, which) -> {
                             checkGpsAndStartRideMode();
@@ -332,6 +360,9 @@ public class HomeFragment extends Fragment {
 
     private void updateRideModeStatusUI(boolean isEnabled) {
         if (binding == null) return;
+        if (binding.switchRideMode.isChecked() != isEnabled) {
+            binding.switchRideMode.setChecked(isEnabled);
+        }
         if (isEnabled) {
             binding.tvRideModeStatus.setText("Sensor monitoring: Active (4.0g threshold)");
             binding.tvRideModeStatus.setTextColor(0xFF4ADE80); // Green
