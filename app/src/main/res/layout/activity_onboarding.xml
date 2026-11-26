@@ -22,16 +22,36 @@
         android:padding="24dp"
         android:gravity="center">
 
-        <!-- Page Indicator Dots -->
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tab_layout_dots"
+        <!-- Custom Page Indicator Dots Row -->
+        <LinearLayout
+            android:id="@+id/layout_dots"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            app:tabBackground="@drawable/dot_selector"
-            app:tabGravity="center"
-            app:tabIndicatorHeight="0dp"
-            android:layout_marginBottom="20dp" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
+
+            <View
+                android:id="@+id/dot_0"
+                android:layout_width="24dp"
+                android:layout_height="8dp"
+                android:background="@drawable/dot_active"
+                android:layout_margin="4dp" />
+
+            <View
+                android:id="@+id/dot_1"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/dot_inactive"
+                android:layout_margin="4dp" />
+
+            <View
+                android:id="@+id/dot_2"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/dot_inactive"
+                android:layout_margin="4dp" />
+        </LinearLayout>
 
         <!-- Next / Agree / Get Started Button -->
         <com.google.android.material.button.MaterialButton

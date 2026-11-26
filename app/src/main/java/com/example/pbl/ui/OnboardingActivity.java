@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
@@ -12,7 +13,6 @@ import com.example.pbl.MainActivity;
 import com.example.pbl.R;
 import com.example.pbl.databinding.ActivityOnboardingBinding;
 import com.example.pbl.model.OnboardingPage;
-import com.google.android.material.tabs.TabLayoutMediator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,13 +49,12 @@ public class OnboardingActivity extends AppCompatActivity {
         OnboardingAdapter adapter = new OnboardingAdapter(pages);
         binding.viewPagerOnboarding.setAdapter(adapter);
 
-        new TabLayoutMediator(binding.tabLayoutDots, binding.viewPagerOnboarding, (tab, position) -> {
-            // Indicator dots created automatically by tab selector
-        }).attach();
+        updateDots(0);
 
         binding.viewPagerOnboarding.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
+                updateDots(position);
                 if (position == pages.size() - 1) {
                     binding.btnOnboardingAction.setText("GET STARTED");
                 } else if (position == 0) {
@@ -77,6 +76,22 @@ public class OnboardingActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    private void updateDots(int position) {
+        android.view.View[] dots = new android.view.View[]{binding.dot0, binding.dot1, binding.dot2};
+        float density = getResources().getDisplayMetrics().density;
+        for (int i = 0; i < dots.length; i++) {
+            ViewGroup.LayoutParams params = dots[i].getLayoutParams();
+            if (i == position) {
+                dots[i].setBackgroundResource(R.drawable.dot_active);
+                params.width = (int) (24 * density);
+            } else {
+                dots[i].setBackgroundResource(R.drawable.dot_inactive);
+                params.width = (int) (8 * density);
+            }
+            dots[i].setLayoutParams(params);
+        }
     }
 
     private void setupOnboardingPages() {
