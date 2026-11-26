@@ -1,15 +1,21 @@
 package com.example.pbl.ui;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.pbl.databinding.FragmentMedicalIdBinding;
@@ -20,6 +26,29 @@ import com.example.pbl.utils.LockscreenMedicalHelper;
 public class MedicalIdFragment extends Fragment {
 
     private FragmentMedicalIdBinding binding;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        Toast.makeText(requireContext(), "Notification permission granted!", Toast.LENGTH_SHORT).show();
+                        if (binding != null) {
+                            binding.switchLockscreenMedical.setChecked(true);
+                        }
+                        showLockscreenConsentDialog();
+                    } else {
+                        Toast.makeText(requireContext(), "Notification permission is required to display the lock screen medical card.", Toast.LENGTH_LONG).show();
+                        if (binding != null) {
+                            binding.switchLockscreenMedical.setChecked(false);
+                        }
+                    }
+                }
+        );
+    }
 
     @Nullable
     @Override
@@ -39,6 +68,20 @@ public class MedicalIdFragment extends Fragment {
 
         binding.switchLockscreenMedical.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
+                // Check POST_NOTIFICATIONS permission on Android 13+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    buttonView.setChecked(false);
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Notification Permission Required")
+                            .setMessage("To display your persistent Lock Screen Medical ID card in the notification shade, GoldenHour requires Notification permission.")
+                            .setPositiveButton("Grant Permission", (dialog, which) -> {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                    return;
+                }
                 showLockscreenConsentDialog();
             } else {
                 LockscreenMedicalHelper.setLockscreenMedicalEnabled(requireContext(), false);
