@@ -75,7 +75,8 @@ public class CrashCountdownActivity extends AppCompatActivity {
         if (keyCode == android.view.KeyEvent.KEYCODE_VOLUME_UP) {
             if (isOkTapped) {
                 cancelCountdown();
-                Toast.makeText(this, "Alert successfully cancelled. You are safe.", Toast.LENGTH_LONG).show();
+                SosManager.logCancelledCrashReport(this, "Deactivated via Volume Up (+)");
+                Toast.makeText(this, "Alert cancelled. Logged as Fake Report in Incidents.", Toast.LENGTH_LONG).show();
                 finish();
             } else {
                 Toast.makeText(this, "Please tap 'I AM OK' first, then press Volume Up (+) to cancel.", Toast.LENGTH_LONG).show();

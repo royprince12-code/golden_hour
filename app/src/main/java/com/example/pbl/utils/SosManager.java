@@ -133,6 +133,21 @@ public class SosManager {
         return new LocationResult(mapsLink, accuracyInfo, timestampInfo);
     }
 
+    public static long logCancelledCrashReport(Context context, String details) {
+        DatabaseHelper db = DatabaseHelper.getInstance(context);
+
+        Incident incident = new Incident(
+                "CRASH_WARNING",
+                System.currentTimeMillis(),
+                "User Marked Safe",
+                "CANCELLED (FAKE REPORT)",
+                false,
+                "False Alarm / Cancelled by User: " + (details != null ? details : "Marked Safe")
+        );
+
+        return db.addIncident(incident);
+    }
+
     public static long triggerDangerSos(Context context, String customDetails) {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 

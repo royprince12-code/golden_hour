@@ -1,6 +1,5 @@
 package com.example.pbl;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,7 +12,6 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.pbl.databinding.ActivityMainBinding;
-import com.example.pbl.ui.OnboardingActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,9 +47,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_onboarding) {
-            Intent intent = new Intent(this, OnboardingActivity.class);
-            startActivity(intent);
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
             return true;
         }
         return super.onOptionsItemSelected(item);
