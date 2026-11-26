@@ -190,9 +190,9 @@ public class CrashDetectionService extends Service implements SensorEventListene
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     "Crash Detection Service",
-                    NotificationManager.IMPORTANCE_HIGH
+                    NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Monitors phone sensors for crash impact spikes in Ride Mode");
+            channel.setDescription("Monitors phone sensors in background");
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
@@ -207,23 +207,13 @@ public class CrashDetectionService extends Service implements SensorEventListene
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
 
-        String medicalSummary = "Ride Mode: Real-time crash detection active";
-        try {
-            UserProfile profile = DatabaseHelper.getInstance(this).getUserProfile();
-            if (profile != null && profile.getBloodGroup() != null && !profile.getBloodGroup().isEmpty()) {
-                medicalSummary = "Blood Group: " + profile.getBloodGroup() + " | Medical ID active";
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error reading user profile for notification", e);
-        }
-
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("GoldenHour Protection Active")
-                .setContentText(medicalSummary)
-                .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentTitle("GoldenHour")
+                .setContentText("Running in background")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
                 .setOngoing(true)
                 .build();
     }
