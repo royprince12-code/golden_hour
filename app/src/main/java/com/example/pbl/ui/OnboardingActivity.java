@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.pbl.MainActivity;
+import com.example.pbl.R;
 import com.example.pbl.databinding.ActivityOnboardingBinding;
 import com.example.pbl.model.OnboardingPage;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -80,28 +81,29 @@ public class OnboardingActivity extends AppCompatActivity {
 
         pages.add(new OnboardingPage(
                 "Terms & Privacy Policy",
-                "Please review the data & safety terms before proceeding",
-                "1. Data Collection: Medical ID (Blood Group, Allergies, Conditions), Emergency Contacts, fine GPS location, and accelerometer motion sensor data.\n\n" +
-                "2. Emergency Use Only: Your Medical ID and live location are shared only during critical crash/SOS events via warning SMS & hospital pre-alerts.\n\n" +
-                "3. Offline Security: All information remains stored locally on your device in an offline database.",
-                android.R.drawable.ic_dialog_info
+                "Complete data protection & privacy commitment",
+                "1. Local Storage First: Your Medical ID and Emergency Contacts are stored offline in an encrypted database on your phone.\n\n" +
+                "2. Emergency Use Only: Live GPS location & Medical ID details are shared exclusively during critical crash or SOS events.\n\n" +
+                "3. Zero Data Selling: Your health and contact information is never uploaded or shared with third-party ad networks.",
+                R.drawable.ic_terms_shield
         ));
 
         pages.add(new OnboardingPage(
                 "Initial Instructions",
-                "How GoldenHour keeps you safe in critical moments",
-                "• Ride Mode: Toggle Ride Mode on before riding/driving to activate real-time accelerometer crash impact detection (4.0g threshold).\n\n" +
-                "• Danger SOS: One-tap panic button for silent emergency alerts and live GPS SMS broadcast to emergency contacts.\n\n" +
-                "• False Alarm Cancel: In case of a false alarm warning, tap 'I AM OK' and press Volume Up (+) on your phone to cancel safely.",
-                android.R.drawable.ic_dialog_alert
+                "How GoldenHour protects you in critical moments",
+                "• Ride Mode (Crash Sensing): Turn on Ride Mode before travel. Built-in motion sensors monitor for severe vehicle crash impact spikes (≥4.0g).\n\n" +
+                "• Danger SOS: Tap the red DANGER SOS button anytime for instant, silent emergency alerts dispatched to your contacts.\n\n" +
+                "• Two-Step Cancellation: If a false alarm warning pops up, tap 'I AM OK' on screen and press Volume Up (+) on your phone to cancel safely.",
+                R.drawable.ic_instructions_siren
         ));
 
         pages.add(new OnboardingPage(
-                "Setup & Permissions",
-                "You are ready to set up your Emergency Shield",
-                "GoldenHour requires Location, SMS, and Notification permissions to detect crashes, send emergency SMS, and display lock-screen Medical ID cards.\n\n" +
-                "Tap 'GET STARTED' to enter GoldenHour and configure your Medical ID Profile and Emergency Contacts.",
-                android.R.drawable.ic_menu_compass
+                "Permissions Setup",
+                "Granting required emergency access to protect you",
+                "• Location (GPS): Required to attach live Google Maps navigation links so emergency contacts and responders can pinpoint your location.\n\n" +
+                "• SMS Dispatch: Required to send multi-part emergency text warnings containing your Medical ID during crashes or SOS triggers.\n\n" +
+                "• Notifications: Required to display your persistent Lock Screen Medical ID Card and background crash detection status.",
+                R.drawable.ic_rocket_launch
         ));
     }
 }

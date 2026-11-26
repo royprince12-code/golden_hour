@@ -13,24 +13,24 @@
         android:padding="28dp"
         android:gravity="center_horizontal">
 
-        <!-- Onboarding Icon Card -->
+        <!-- Onboarding Graphic Icon Card -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="90dp"
-            android:layout_height="90dp"
-            android:layout_marginTop="40dp"
-            app:cardCornerRadius="45dp"
-            app:cardElevation="6dp"
+            android:id="@+id/card_onboarding_icon_bg"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="32dp"
+            app:cardCornerRadius="50dp"
+            app:cardElevation="8dp"
             app:cardBackgroundColor="#1E293B"
-            app:strokeWidth="2dp"
+            app:strokeWidth="3dp"
             app:strokeColor="#2563EB">
 
             <ImageView
                 android:id="@+id/iv_onboarding_icon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
                 android:layout_gravity="center"
-                android:src="@android:drawable/ic_dialog_info"
-                app:tint="#38BDF8"
+                android:src="@drawable/ic_terms_shield"
                 android:contentDescription="Page Icon" />
         </com.google.android.material.card.MaterialCardView>
 
@@ -39,9 +39,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Terms &amp; Data Conditions"
+            android:text="Terms &amp; Privacy Policy"
             android:textColor="#FFFFFF"
-            android:textSize="24sp"
+            android:textSize="26sp"
             android:textStyle="bold"
             android:gravity="center" />
 
@@ -50,29 +50,31 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Please read and accept our emergency data policy to continue"
+            android:text="Please review the data &amp; safety terms before proceeding"
             android:textColor="#94A3B8"
             android:textSize="14sp"
             android:gravity="center" />
 
-        <!-- Detailed Content Container -->
+        <!-- Detailed Content Container Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="#1E293B">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#1E293B"
+            app:strokeWidth="1dp"
+            app:strokeColor="#334155">
 
             <TextView
                 android:id="@+id/tv_onboarding_body"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="20dp"
-                android:textColor="#E2E8F0"
+                android:padding="22dp"
+                android:textColor="#F1F5F9"
                 android:textSize="14sp"
-                android:lineSpacingExtra="4dp"
-                android:text="1. Data Collection: Medical ID, emergency contacts, GPS location, and accelerometer sensor data.\n\n2. Emergency Dispatch: Automatically sends SMS warnings &amp; hospital pre-alerts during crash/SOS events.\n\n3. Local Storage: Information remains saved locally on your device in an offline database." />
+                android:lineSpacingExtra="6dp"
+                android:text="1. Local Storage First: Your Medical ID and Emergency Contacts are stored offline in an encrypted SQLite database on your phone.\n\n2. Emergency Use Only: Live location &amp; Medical ID are shared exclusively during critical crash/SOS events.\n\n3. Zero Ad Tracking: Your emergency data is never sold or shared with third-party ad networks." />
         </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
