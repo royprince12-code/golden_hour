@@ -223,6 +223,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_INCIDENTS, null, values);
     }
 
+    public void updateIncidentLocation(long id, String location) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(KEY_INCIDENT_LOCATION, location);
+        db.update(TABLE_INCIDENTS, values, KEY_INCIDENT_ID + "=?", new String[]{String.valueOf(id)});
+    }
+
     public List<Incident> getAllIncidents() {
         List<Incident> incidentList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();

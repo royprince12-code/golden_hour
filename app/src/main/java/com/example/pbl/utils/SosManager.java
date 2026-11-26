@@ -46,7 +46,6 @@ public class SosManager {
     }
 
     public static LocationResult getCurrentLocationDetails(Context context) {
-        // Exact official Google Maps URL format specified in Step 3
         String mapsLink = "https://www.google.com/maps/search/?api=1&query=18.5204,73.8567";
         String accuracyInfo = "Accuracy: Unknown";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
@@ -58,7 +57,6 @@ public class SosManager {
 
                 FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(context);
 
-                // Request fresh high-accuracy location (Step 2)
                 CurrentLocationRequest request = new CurrentLocationRequest.Builder()
                         .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
                         .setDurationMillis(5000)
@@ -79,7 +77,6 @@ public class SosManager {
                 if (task.isSuccessful() && task.getResult() != null) {
                     loc = task.getResult();
                 } else {
-                    // Fallback to last known location if current location timed out, validating age (< 5 mins)
                     Task<Location> lastTask = fusedClient.getLastLocation();
                     startTime = System.currentTimeMillis();
                     while (!lastTask.isComplete() && (System.currentTimeMillis() - startTime) < 2000) {
@@ -115,11 +112,9 @@ public class SosManager {
                     long time = loc.getTime();
                     timestampInfo = sdf.format(new Date(time));
 
-                    // Generate official Google Maps search URL with latitude first, longitude second (Step 3)
                     mapsLink = "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng;
                     accuracyInfo = (accuracy >= 0) ? "±" + Math.round(accuracy) + "m" : "GPS Fix";
 
-                    // Step 4: Useful Logcat debugging messages
                     Log.i(TAG, "=== EMERGENCY LOCATION ACQUIRED ===");
                     Log.i(TAG, "Latitude: " + lat);
                     Log.i(TAG, "Longitude: " + lng);
@@ -141,7 +136,6 @@ public class SosManager {
     public static long triggerDangerSos(Context context, String customDetails) {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
-        LocationResult locResult = getCurrentLocationDetails(context);
         String details = (customDetails != null && !customDetails.isEmpty())
                 ? customDetails
                 : "Silent Danger SOS Triggered from Mobile App";
@@ -149,7 +143,7 @@ public class SosManager {
         Incident incident = new Incident(
                 "DANGER_SOS",
                 System.currentTimeMillis(),
-                locResult.mapsLink,
+                "Acquiring GPS Location...",
                 "POLICE_NOTIFIED",
                 true,
                 details
@@ -157,19 +151,24 @@ public class SosManager {
 
         long incidentId = db.addIncident(incident);
 
-        UserProfile profile = db.getUserProfile();
-        String userName = (profile != null && profile.getName() != null && !profile.getName().isEmpty())
-                ? profile.getName()
-                : "GoldenHour User";
-        String medicalInfo = (profile != null && profile.getBloodGroup() != null)
-                ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
-                : "";
+        // Execute location acquisition & SMS sending in background thread so UI responds instantly
+        new Thread(() -> {
+            LocationResult locResult = getCurrentLocationDetails(context);
+            db.updateIncidentLocation(incidentId, locResult.mapsLink);
 
-        String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " triggered Danger SOS. Live Map: " + locResult.mapsLink +
-                " (Accuracy: " + locResult.accuracyInfo + ", Time: " + locResult.timestampInfo + ")" + medicalInfo + ". Please send help immediately!";
+            UserProfile profile = db.getUserProfile();
+            String userName = (profile != null && profile.getName() != null && !profile.getName().isEmpty())
+                    ? profile.getName()
+                    : "GoldenHour User";
+            String medicalInfo = (profile != null && profile.getBloodGroup() != null)
+                    ? " | Blood Group: " + profile.getBloodGroup() + ", Allergies: " + profile.getAllergies()
+                    : "";
 
-        // Send SMS asynchronously in background thread to prevent UI freeze / ANR
-        new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
+            String smsMessage = "⚠️ CRITICAL EMERGENCY WARNING! " + userName + " triggered Danger SOS. Live Map: " + locResult.mapsLink +
+                    " (Accuracy: " + locResult.accuracyInfo + ", Time: " + locResult.timestampInfo + ")" + medicalInfo + ". Please send help immediately!";
+
+            sendSmsToEmergencyContacts(context, smsMessage);
+        }).start();
 
         return incidentId;
     }
@@ -177,13 +176,12 @@ public class SosManager {
     public static long triggerCrashAlert(Context context, String details) {
         DatabaseHelper db = DatabaseHelper.getInstance(context);
 
-        LocationResult locResult = getCurrentLocationDetails(context);
         String crashDetails = (details != null && !details.isEmpty()) ? details : "Severe Vehicle Crash Impact Detected (>4.0g)";
 
         Incident incident = new Incident(
                 "CRASH",
                 System.currentTimeMillis(),
-                locResult.mapsLink,
+                "Acquiring GPS Location...",
                 "AMBULANCE_DISPATCHED",
                 true,
                 crashDetails
@@ -191,21 +189,26 @@ public class SosManager {
 
         long incidentId = db.addIncident(incident);
 
-        UserProfile profile = db.getUserProfile();
-        String userName = (profile != null && profile.getName() != null && !profile.getName().isEmpty())
-                ? profile.getName()
-                : "GoldenHour User";
-        String bloodGroup = (profile != null && profile.getBloodGroup() != null) ? profile.getBloodGroup() : "Unknown";
-        String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
-        String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
+        // Execute location acquisition & SMS sending in background thread so UI responds instantly
+        new Thread(() -> {
+            LocationResult locResult = getCurrentLocationDetails(context);
+            db.updateIncidentLocation(incidentId, locResult.mapsLink);
 
-        String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " involved in road crash. Live Map: " + locResult.mapsLink +
-                " (Accuracy: " + locResult.accuracyInfo + ", Time: " + locResult.timestampInfo + ")" +
-                ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
-                ". Ambulance dispatched and hospital pre-alerted!";
+            UserProfile profile = db.getUserProfile();
+            String userName = (profile != null && profile.getName() != null && !profile.getName().isEmpty())
+                    ? profile.getName()
+                    : "GoldenHour User";
+            String bloodGroup = (profile != null && profile.getBloodGroup() != null) ? profile.getBloodGroup() : "Unknown";
+            String allergies = (profile != null && profile.getAllergies() != null) ? profile.getAllergies() : "None";
+            String conditions = (profile != null && profile.getMedicalConditions() != null) ? profile.getMedicalConditions() : "None";
 
-        // Send SMS asynchronously in background thread to prevent UI freeze / ANR
-        new Thread(() -> sendSmsToEmergencyContacts(context, smsMessage)).start();
+            String smsMessage = "⚠️ CRITICAL ACCIDENT WARNING! " + userName + " involved in road crash. Live Map: " + locResult.mapsLink +
+                    " (Accuracy: " + locResult.accuracyInfo + ", Time: " + locResult.timestampInfo + ")" +
+                    ". Medical ID -> Blood Group: " + bloodGroup + ", Allergies: " + allergies + ", Conditions: " + conditions +
+                    ". Ambulance dispatched and hospital pre-alerted!";
+
+            sendSmsToEmergencyContacts(context, smsMessage);
+        }).start();
 
         return incidentId;
     }
