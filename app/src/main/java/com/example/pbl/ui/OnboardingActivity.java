@@ -32,7 +32,10 @@ public class OnboardingActivity extends AppCompatActivity {
 
     public static void setOnboardingCompleted(Context context, boolean completed) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, completed).apply();
+        prefs.edit()
+                .putBoolean(KEY_ONBOARDING_COMPLETED, completed)
+                .putBoolean("privacy_policy_accepted", completed)
+                .apply();
     }
 
     @Override
