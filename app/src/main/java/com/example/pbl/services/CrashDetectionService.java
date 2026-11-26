@@ -188,7 +188,7 @@ public class CrashDetectionService extends Service implements SensorEventListene
         }
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("GoldenHour Protection (Lock Screen Medical ID)")
+                .setContentTitle("GoldenHour Protection Active")
                 .setContentText(medicalSummary)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentIntent(pendingIntent)
