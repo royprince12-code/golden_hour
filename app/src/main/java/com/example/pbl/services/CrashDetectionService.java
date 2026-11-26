@@ -109,6 +109,22 @@ public class CrashDetectionService extends Service implements SensorEventListene
         }
     }
 
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        try {
+            Intent restartServiceIntent = new Intent(getApplicationContext(), CrashDetectionService.class);
+            restartServiceIntent.setPackage(getPackageName());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                getApplicationContext().startForegroundService(restartServiceIntent);
+            } else {
+                getApplicationContext().startService(restartServiceIntent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onTaskRemoved", e);
+        }
+    }
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
