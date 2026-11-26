@@ -67,6 +67,11 @@
             android:exported="false"
             android:theme="@style/Theme.Pbl" />
 
+        <activity
+            android:name=".ui.OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Pbl" />
+
         <service
             android:name=".services.CrashDetectionService"
             android:enabled="true"

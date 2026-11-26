@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F172A">
+
+    <!-- ViewPager for Full Screen Onboarding Pages -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager_onboarding"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/layout_onboarding_bottom" />
+
+    <!-- Bottom Controls -->
+    <LinearLayout
+        android:id="@+id/layout_onboarding_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <!-- Page Indicator Dots -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout_dots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            app:tabBackground="@drawable/dot_selector"
+            app:tabGravity="center"
+            app:tabIndicatorHeight="0dp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Next / Agree / Get Started Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_onboarding_action"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="AGREE &amp; CONTINUE"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="28dp"
+            app:backgroundTint="#2563EB"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+
+</RelativeLayout>

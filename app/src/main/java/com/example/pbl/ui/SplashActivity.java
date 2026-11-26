@@ -25,7 +25,12 @@ public class SplashActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+            Intent intent;
+            if (OnboardingActivity.isOnboardingCompleted(SplashActivity.this)) {
+                intent = new Intent(SplashActivity.this, MainActivity.class);
+            } else {
+                intent = new Intent(SplashActivity.this, OnboardingActivity.class);
+            }
             startActivity(intent);
             finish();
         }, SPLASH_DELAY_MS);
