@@ -29,6 +29,7 @@ public class CrashDetectionService extends Service implements SensorEventListene
 
     private static final String TAG = "CrashDetectionService";
     private static final String CHANNEL_ID = "golden_hour_crash_detection";
+    private static final String CRASH_ALERT_CHANNEL_ID = "golden_hour_crash_alert_channel";
     private static final int NOTIFICATION_ID = 1001;
 
     // Thresholds specified in report: 4g impact threshold
@@ -74,7 +75,7 @@ public class CrashDetectionService extends Service implements SensorEventListene
             if (sensorManager != null) {
                 accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             }
-            createNotificationChannel();
+            createNotificationChannels();
         } catch (Exception e) {
             Log.e(TAG, "Error in onCreate", e);
         }
@@ -178,13 +179,13 @@ public class CrashDetectionService extends Service implements SensorEventListene
             Intent intent = new Intent(this, CrashCountdownActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-            // Use Full-Screen Intent to bypass Android 10+ background activity start restrictions
+            // Full-Screen Intent for locking screen / background pop-up
             PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
                     this, 0, intent,
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
             );
 
-            NotificationCompat.Builder alertBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            NotificationCompat.Builder alertBuilder = new NotificationCompat.Builder(this, CRASH_ALERT_CHANNEL_ID)
                     .setContentTitle("⚠️ CRITICAL ACCIDENT DETECTED!")
                     .setContentText("Emergency countdown active. Opening warning window...")
                     .setSmallIcon(android.R.drawable.ic_dialog_alert)
@@ -199,24 +200,36 @@ public class CrashDetectionService extends Service implements SensorEventListene
                 notificationManager.notify(9999, alertBuilder.build());
             }
 
-            // Also directly start activity
+            // Also directly start activity for unlocked state
             startActivity(intent);
         } catch (Exception e) {
             Log.e(TAG, "Error launching CrashCountdownActivity", e);
         }
     }
 
-    private void createNotificationChannel() {
+    private void createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Crash Detection Service",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription("Monitors phone sensors in background");
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
-                manager.createNotificationChannel(channel);
+                // Low importance channel for background service persistent notification
+                NotificationChannel serviceChannel = new NotificationChannel(
+                        CHANNEL_ID,
+                        "Background Protection",
+                        NotificationManager.IMPORTANCE_LOW
+                );
+                serviceChannel.setDescription("Monitors phone sensors in background");
+                manager.createNotificationChannel(serviceChannel);
+
+                // High importance channel with full-screen intent support for emergency crash alerts
+                NotificationChannel alertChannel = new NotificationChannel(
+                        CRASH_ALERT_CHANNEL_ID,
+                        "Emergency Crash Alerts",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                alertChannel.setDescription("Triggers high-priority full-screen warning window over lock screen during vehicle crashes");
+                alertChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                alertChannel.setBypassDnd(true);
+                manager.createNotificationChannel(alertChannel);
             }
         }
     }
