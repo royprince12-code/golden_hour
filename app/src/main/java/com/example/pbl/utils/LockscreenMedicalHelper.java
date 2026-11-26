@@ -79,16 +79,15 @@ public class LockscreenMedicalHelper {
             contactSummary.append("No contacts saved");
         }
 
-        StringBuilder cardText = new StringBuilder();
-        cardText.append("🩸 BLOOD GROUP: ").append(bloodGroup.toUpperCase()).append("\n");
-        cardText.append("👤 Patient: ").append(name).append(" (Age: ").append(age).append(" | Ht/Wt: ").append(htWt).append(")\n");
-        cardText.append("⚠️ Conditions: ").append(conditions).append("\n");
-        cardText.append("🚫 Allergies: ").append(allergies).append("\n");
-        cardText.append("💊 Medications: ").append(medications).append("\n");
-        cardText.append("🏥 Surgeries: ").append(surgeries).append("\n");
-        cardText.append("🫀 Organ Donor: ").append(organDonor).append("\n");
-        cardText.append("📞 Emergency Contacts: ").append(contactSummary.toString()).append("\n");
-        cardText.append("📝 Notes: ").append(notes);
+        String cardText = "🩸 BLOOD GROUP: " + bloodGroup.toUpperCase() + "\n" +
+                "👤 Patient: " + name + " (Age: " + age + " | Ht/Wt: " + htWt + ")\n" +
+                "⚠️ Conditions: " + conditions + "\n" +
+                "🚫 Allergies: " + allergies + "\n" +
+                "💊 Medications: " + medications + "\n" +
+                "🏥 Surgeries: " + surgeries + "\n" +
+                "🫀 Organ Donor: " + organDonor + "\n" +
+                "📞 Emergency Contacts: " + contactSummary + "\n" +
+                "📝 Notes: " + notes;
 
         // Inert PendingIntent: Tapping the notification does NOT open or redirect to the application
         PendingIntent inertIntent = PendingIntent.getActivity(
@@ -98,12 +97,13 @@ public class LockscreenMedicalHelper {
         Notification notification = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setContentTitle("🩺 EMERGENCY MEDICAL ID")
                 .setContentText("Blood Group: " + bloodGroup + " | Patient: " + name)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(cardText.toString()))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(cardText))
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentIntent(inertIntent)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOngoing(true)
+                .setAutoCancel(false)
                 .build();
 
         try {
