@@ -13,6 +13,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -163,8 +164,19 @@ public class CrashDetectionService extends Service implements SensorEventListene
 
     private void triggerCrashCountdown() {
         try {
+            PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (powerManager != null) {
+                PowerManager.WakeLock wakeLock = powerManager.newWakeLock(
+                        PowerManager.FULL_WAKE_LOCK |
+                        PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                        PowerManager.ON_AFTER_RELEASE,
+                        "GoldenHour:CrashEmergencyWakeLock"
+                );
+                wakeLock.acquire(15000); // Hold for 15 seconds to ensure CPU and screen wake up
+            }
+
             Intent intent = new Intent(this, CrashCountdownActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
         } catch (Exception e) {
             Log.e(TAG, "Error launching CrashCountdownActivity", e);
@@ -176,7 +188,7 @@ public class CrashDetectionService extends Service implements SensorEventListene
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
                     "Crash Detection Service",
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Monitors phone sensors for crash impact spikes in Ride Mode");
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -208,7 +220,7 @@ public class CrashDetectionService extends Service implements SensorEventListene
                 .setContentText(medicalSummary)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOngoing(true)
                 .build();
